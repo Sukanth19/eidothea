@@ -1,4 +1,4 @@
-"""The Unlit Archive API. Run with: uvicorn app.main:app --reload (from api/)."""
+"""Eidothea API. Run with: uvicorn app.main:app --reload (from api/)."""
 
 import json
 import os
@@ -35,15 +35,15 @@ async def lifespan(_app: FastAPI):
     yield
 
 
-app = FastAPI(title="The Unlit Archive", lifespan=lifespan)
+app = FastAPI(title="Eidothea", lifespan=lifespan)
 
 Conn = Annotated[sqlite3.Connection, Depends(db.get_db)]
 
 
 # --------------------------------------------------------------------------- auth deps
 
-def optional_user(conn: Conn, unlit_session: Annotated[str | None, Cookie()] = None):
-    return user_for_token(conn, unlit_session)
+def optional_user(conn: Conn, eidothea_session: Annotated[str | None, Cookie()] = None):
+    return user_for_token(conn, eidothea_session)
 
 
 def require_user(user=Depends(optional_user)):
@@ -192,9 +192,9 @@ def login(creds: Credentials, response: Response, conn: Conn):
 
 
 @app.post("/api/auth/logout")
-def logout(response: Response, conn: Conn, unlit_session: Annotated[str | None, Cookie()] = None):
-    if unlit_session:
-        delete_session(conn, unlit_session)
+def logout(response: Response, conn: Conn, eidothea_session: Annotated[str | None, Cookie()] = None):
+    if eidothea_session:
+        delete_session(conn, eidothea_session)
     response.delete_cookie(SESSION_COOKIE, path="/")
     return {"ok": True}
 

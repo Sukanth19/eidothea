@@ -4,7 +4,7 @@ import { motion, useScroll, useSpring } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { paragraphs } from "@/lib/format";
 
-const SIZE_KEY = "unlit.reader-size";
+const SIZE_KEY = "eidothea.reader-size";
 const SIZES = [0.92, 1.02, 1.14, 1.28];
 
 /** Story body: scroll-progress bar, adjustable text size, paragraphs that surface as you reach them. */

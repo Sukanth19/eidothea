@@ -37,7 +37,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   return (
     <div className="terminal">
       <div className="boot">
-        UNLIT ARCHIVE · TERMINAL 7<br />
+        EIDOTHEA · TERMINAL 7<br />
         LINK ESTABLISHED .......... OK<br />
         {isLogin ? "IDENTIFY YOURSELF." : "NEW OPERATOR ENROLMENT."}
       </div>

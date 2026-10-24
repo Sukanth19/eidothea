@@ -32,7 +32,7 @@ export function Nav({ user }: { user: User | null }) {
     <header className="site-header">
       <div className="wrap">
         <Link href="/" className="logo flicker">
-          <ScrambleText text="THE UNLIT ARCHIVE" />
+          <ScrambleText text="EIDOTHEA" />
           <span className="caret" aria-hidden="true" />
         </Link>
         <nav className="nav" aria-label="Main">

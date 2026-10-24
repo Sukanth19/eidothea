@@ -323,7 +323,7 @@ window.Views = (function () {
     root.innerHTML = `
       <div class="terminal">
         <div class="boot">
-          UNLIT ARCHIVE TERMINAL 7<br>
+          EIDOTHEA TERMINAL 7<br>
           LINK ESTABLISHED .......... OK<br>
           ${user.username ? `CURRENT SESSION .......... ${esc(user.username.toUpperCase())}` : "IDENTIFY YOURSELF."}
         </div>

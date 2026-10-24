@@ -3,7 +3,7 @@
 import { MotionConfig } from "motion/react";
 import { createContext, useContext, useEffect, useState } from "react";
 
-const FX_KEY = "unlit.fx";
+const FX_KEY = "eidothea.fx";
 
 const FxContext = createContext<{ fx: boolean; toggle: () => void }>({ fx: true, toggle: () => {} });
 export const useFx = () => useContext(FxContext);

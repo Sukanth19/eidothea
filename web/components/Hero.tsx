@@ -34,7 +34,7 @@ export function Hero({ loggedIn }: { loggedIn: boolean }) {
         // TRANSMISSION RECOVERED
       </div>
       <h1>
-        <ScrambleText text="THE UNLIT ARCHIVE" duration={1400} />
+        <ScrambleText text="EIDOTHEA" duration={1400} />
       </h1>
       <Typewriter lines={LINES} />
       <div className="actions rise" style={{ "--i": 12 } as React.CSSProperties}>

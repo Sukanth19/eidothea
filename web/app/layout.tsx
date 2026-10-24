@@ -11,7 +11,7 @@ const elite = Special_Elite({ subsets: ["latin"], weight: "400", variable: "--fo
 const vt = VT323({ subsets: ["latin"], weight: "400", variable: "--font-vt" });
 
 export const metadata: Metadata = {
-  title: { default: "The Unlit Archive", template: "%s · The Unlit Archive" },
+  title: { default: "Eidothea", template: "%s · Eidothea" },
   description: "An archive of creepypastas, recovered and new.",
 };
 

@@ -6,7 +6,7 @@ import secrets
 import sqlite3
 from datetime import datetime, timedelta, timezone
 
-SESSION_COOKIE = "unlit_session"
+SESSION_COOKIE = "eidothea_session"
 SESSION_DAYS = 30
 
 # Higher level = more power. Users can only manage people strictly below them.

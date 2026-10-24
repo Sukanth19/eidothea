@@ -1,4 +1,4 @@
-# The Unlit Archive
+# Eidothea
 
 A static creepypasta and cryptid archive. It is plain HTML, CSS and JS with no build step and no backend. All data lives in your browser's `localStorage`.
 

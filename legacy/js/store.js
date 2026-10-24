@@ -2,10 +2,10 @@
 
 window.Store = (function () {
   const KEYS = {
-    entries: "unlit.entries",
-    users: "unlit.users",
-    session: "unlit.session",
-    fx: "unlit.fx"
+    entries: "eidothea.entries",
+    users: "eidothea.users",
+    session: "eidothea.session",
+    fx: "eidothea.fx"
   };
 
   // In-memory fallback for when storage is blocked (private mode, etc.)
