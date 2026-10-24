@@ -86,7 +86,8 @@ IP=$(curl -fsS --max-time 3 -H Metadata:true \
   "http://169.254.169.254/metadata/instance/network/interface/0/ipv4/ipAddress/0/publicIpAddress?api-version=2021-02-01&format=text" \
   2>/dev/null || echo "<your VM's public IP>")
 echo
-echo "Done. Eidothea is at: ${DOMAIN:+https://$DOMAIN}${DOMAIN:-http://$IP}"
+if [ -n "$DOMAIN" ]; then URL="https://$DOMAIN"; else URL="http://$IP"; fi
+echo "Done. Eidothea is at: $URL"
 echo
 echo "Next, create your Overseer account:"
 echo "  sudo -u $APP_USER $APP_DIR/api/.venv/bin/python $APP_DIR/api/create_overseer.py <username>"
