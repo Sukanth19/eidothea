@@ -1,0 +1,18 @@
+[Unit]
+Description=Eidothea API (FastAPI)
+After=network.target
+
+[Service]
+User=eidothea
+WorkingDirectory=/opt/eidothea/api
+EnvironmentFile=/etc/eidothea.env
+# Only reachable from this machine; the website forwards /api to it
+ExecStart=/opt/eidothea/api/.venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

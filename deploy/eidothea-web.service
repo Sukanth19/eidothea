@@ -1,0 +1,18 @@
+[Unit]
+Description=Eidothea website (Next.js)
+After=network.target eidothea-api.service
+
+[Service]
+User=eidothea
+WorkingDirectory=/opt/eidothea/web
+EnvironmentFile=/etc/eidothea.env
+Environment=NODE_ENV=production
+ExecStart=/opt/eidothea/web/node_modules/.bin/next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=3
+NoNewPrivileges=true
+ProtectSystem=full
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

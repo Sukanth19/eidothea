@@ -150,6 +150,38 @@ Removing an account also deletes that account's stories.
 - **Video game stories** are put in the "Video Games and Gaming" category automatically, on import and whenever a story is posted or edited (`api/app/gaming.py`). `api/tag_games.py` re-applies it to the existing database.
 - **Editing imports:** imported stories have no owner, so only moderators and above can edit them.
 
+### Deploy to Azure (free with Azure for Students)
+
+[Azure for Students](https://azure.microsoft.com/free/students) gives you $100 of credit for 12 months, with no card needed. It also includes a small Linux VM (B1s) in its free services. One VM runs everything: the API, the website, and Caddy in front with automatic HTTPS.
+
+1. **Sign up** at the link above with your school email (or through the GitHub Student Pack).
+2. **Create the VM.** In the Azure portal, go to **Virtual machines → Create → Azure virtual machine**:
+   - Image: **Ubuntu Server 24.04 LTS**
+   - Size: **B1s** (1 vCPU, 1 GB RAM; the one marked "free services eligible")
+   - Authentication: **SSH public key**. Download the key it generates and keep it safe.
+   - Inbound ports: allow **SSH (22), HTTP (80), HTTPS (443)**
+   - Everything else can stay on the defaults. Anything outside the free services comes out of the $100 credit.
+3. **Get a free web address (recommended).** Open the VM, click its **Public IP address**, go to **Configuration**, and set a **DNS name label**, for example `eidothea`. Your site becomes `eidothea.<region>.cloudapp.azure.com`, and Caddy gets an HTTPS certificate for it automatically.
+4. **Install.** SSH in and run:
+   ```sh
+   ssh -i <your-key>.pem azureuser@<public-ip>
+   sudo git clone https://github.com/Sukanth19/eidothea.git /opt/eidothea
+   sudo bash /opt/eidothea/deploy/setup.sh eidothea.<region>.cloudapp.azure.com   # with the DNS name from step 3
+   sudo bash /opt/eidothea/deploy/setup.sh                                         # or plain http on the IP
+   ```
+   This takes about 5–10 minutes. It installs Node, Python and Caddy, builds the site, imports the stories, starts everything and turns on the firewall.
+5. **Make yourself the Overseer:**
+   ```sh
+   sudo -u eidothea /opt/eidothea/api/.venv/bin/python /opt/eidothea/api/create_overseer.py <username>
+   ```
+
+**Later:**
+- **Ship new code** after pushing to GitHub: `sudo bash /opt/eidothea/deploy/update.sh`
+- **Add a domain** later: re-run `setup.sh <domain>`. It's safe to run again, and your data stays.
+- **Logs:** `journalctl -u eidothea-api -f` or `journalctl -u eidothea-web -f`
+- **Backups:** the database is copied daily to `/opt/eidothea/data/backups/`, keeping the last 7.
+- **Credit:** check **Cost Management** in the portal now and then. When the 12 months are up, Azure lets you renew if you're still a student.
+
 ### Running parts by hand
 
 ```sh
