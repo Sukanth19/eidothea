@@ -98,39 +98,65 @@ The platform uses a simple role hierarchy.
 
 ---
 
-## Project Structure
+## Current Implementation
 
-```text
-eidothea/
-│
-├── backend/
-│   ├── api/
-│   ├── models/
-│   ├── services/
-│   └── database/
-│
-├── frontend/
-│   ├── components/
-│   ├── pages/
-│   └── styles/
-│
-├── public/
-│
-└── README.md
+A creepypasta archive. It's seeded with about 3,500 stories from the
+[DavidGetter1/creepypastas](https://huggingface.co/datasets/DavidGetter1/creepypastas) dataset, and users can sign up and add their own.
+
+```
+api/      Python: FastAPI + SQLite (users, sessions, stories), pandas importer
+web/      Next.js 16 + React 19 + Motion (the website)
+data/     archive.db lives here (created on first run, not committed)
+legacy/   the original static HTML/CSS/JS version
+dev.sh    starts both servers
 ```
 
----
+### Run it
 
-## Running the Project
-
-Clone the repository:
-
-```bash
-git clone https://github.com/yourusername/eidothea.git
-cd eidothea
+```sh
+./dev.sh
 ```
 
-Install dependencies and run the development server according to the project stack.
+Then open http://localhost:3000. The first run creates the Python venv, installs the npm packages and imports the dataset.
+
+### Make yourself the Overseer (once)
+
+```sh
+cd api
+.venv/bin/python create_overseer.py <your-username>
+```
+
+It asks for a password. Only one Overseer can exist, and the website can't create or assign one. To change its password later, use `create_overseer.py <name> --reset`.
+
+### Roles
+
+| Role | Can |
+|---|---|
+| Visitor (logged out) | Read everything |
+| User | Write stories; edit and delete **only their own** |
+| Moderator | Edit and delete **any** story |
+| Admin | Moderator powers, plus promote users to moderator and remove accounts below admin |
+| Overseer | Everything, including appointing and removing admins |
+
+Users who sign up start as **User**. Promote them on the **Control** page (`/admin`).
+
+Removing an account also deletes that account's stories.
+
+### Data notes
+
+- **Import options:** `import_dataset.py --replace` re-imports from scratch, and `--csv path.csv` imports from a local copy instead of Hugging Face.
+- **Authors:** the dataset has no author column. About 1,360 stories end with a "Credit To – Name" line, and the importer pulls the author's name from it. The rest show as "Unknown author".
+- **Cut-off stories:** 278 stories in the dataset are cut off at 32,767 characters, the Excel cell limit. They're marked as cut off on the story page.
+- **Editing imports:** imported stories have no owner, so only moderators and above can edit them.
+
+### Running parts by hand
+
+```sh
+cd api && .venv/bin/uvicorn app.main:app --reload --port 8000
+cd web && npm run dev            # or: npm run build && npm start
+```
+
+Next.js forwards `/api/*` to FastAPI (`API_URL`, which defaults to `http://127.0.0.1:8000`), so the browser only ever talks to port 3000. Set `COOKIE_SECURE=1` for the API when serving over HTTPS.
 
 ---
 

@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark">
+  <title>THE UNLIT ARCHIVE</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,600;1,400&family=Special+Elite&family=VT323&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/effects.css">
+</head>
+<body>
+  <div class="fx-layer static" aria-hidden="true"></div>
+  <div class="fx-layer scanlines" aria-hidden="true"></div>
+  <div class="fx-layer vignette" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <a href="#/" class="logo glitch flicker" data-text="THE UNLIT ARCHIVE">THE UNLIT ARCHIVE</a>
+    <span class="caret" aria-hidden="true"></span>
+    <nav id="nav" class="nav" aria-label="Main"></nav>
+  </header>
+
+  <main id="view" class="view" tabindex="-1"></main>
+
+  <footer class="site-footer">
+    <span>TERMINAL 7 // LOCAL COPY // DO NOT DISTRIBUTE</span>
+    <button type="button" id="fx-toggle" class="link-btn">[FX: ON]</button>
+  </footer>
+
+  <script src="js/seed.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/redact.js"></script>
+  <script src="js/views.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

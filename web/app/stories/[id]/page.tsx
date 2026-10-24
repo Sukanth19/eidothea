@@ -1,0 +1,86 @@
+import type { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
+import { DeleteStoryButton } from "@/components/DeleteStoryButton";
+import { Reader } from "@/components/Reader";
+import { ScrambleText } from "@/components/ScrambleText";
+import { Rating } from "@/components/StoryCard";
+import { formatDate } from "@/lib/format";
+import { apiGet, currentUser } from "@/lib/server-api";
+import type { Story } from "@/lib/types";
+
+type Props = { params: Promise<{ id: string }> };
+
+async function load(id: string) {
+  if (!/^\d+$/.test(id)) return null;
+  return apiGet<Story>(`/api/stories/${id}`);
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const story = await load((await params).id);
+  return { title: story?.title ?? "Not found" };
+}
+
+export default async function StoryPage({ params }: Props) {
+  const [story, user] = await Promise.all([load((await params).id), currentUser()]);
+  if (!story) notFound();
+
+  const ownStory = user && story.author_id === user.id;
+
+  return (
+    <article className="doc">
+      <p><Link href="/stories">&lt; back to archive</Link></p>
+
+      {story.can_edit && (
+        <div className="owner-bar">
+          <span className="label">{ownStory ? "YOUR STORY" : "MODERATOR ACCESS"}</span>
+          <Link href={`/stories/${story.id}/edit`} className="btn">EDIT</Link>
+          <DeleteStoryButton id={story.id} redirectTo={ownStory ? "/me" : "/stories"} />
+        </div>
+      )}
+
+      <header className="doc-head">
+        <div className="term muted" style={{ fontSize: "1.2rem" }}>
+          FILE #{String(story.id).padStart(4, "0")} ·{" "}
+          <span className={`badge ${story.source}`}>{story.source === "user" ? "COMMUNITY" : "CLASSIC ARCHIVE"}</span>
+        </div>
+        <h1 style={{ marginTop: ".5rem" }}><ScrambleText text={story.title} duration={700} /></h1>
+        <div className="meta">
+          <span>BY <b>{story.author ?? "Unknown author"}</b></span>
+          <span>{formatDate(story.published_at)}</span>
+          <span>{story.reading_minutes} MIN READ</span>
+          {story.rating != null && <Rating value={story.rating} />}
+          {story.updated_at && <span>EDITED {formatDate(story.updated_at)}</span>}
+        </div>
+        <div className="chips">
+          {story.categories.map(c => (
+            <Link key={c} href={`/stories?category=${encodeURIComponent(c)}`} className="chip">{c}</Link>
+          ))}
+        </div>
+      </header>
+
+      <Reader body={story.body} />
+
+      {story.truncated && (
+        <p className="notice">
+          ⚠ THIS TRANSMISSION WAS CUT OFF. The source dataset stored each story in a single spreadsheet cell,
+          and this one ran past the 32,767-character limit. The rest is lost.
+        </p>
+      )}
+
+      <div className="end-mark">— END OF FILE —</div>
+
+      {story.tags.length > 0 && (
+        <div className="chips" style={{ justifyContent: "center" }}>
+          {story.tags.map(t => (
+            <Link key={t} href={`/stories?q=${encodeURIComponent(t)}`} className="chip">#{t}</Link>
+          ))}
+        </div>
+      )}
+
+      <div className="actions" style={{ justifyContent: "center", marginTop: "2.5rem" }}>
+        <Link href="/random" className="btn" prefetch={false}>ANOTHER ONE</Link>
+      </div>
+    </article>
+  );
+}
