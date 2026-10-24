@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <defs>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="1.4" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <pattern id="scan" width="4" height="3" patternUnits="userSpaceOnUse">
+      <rect width="4" height="1" fill="#ffffff" opacity=".05"/>
+    </pattern>
+  </defs>
+  <!-- CRT screen -->
+  <rect x="2" y="2" width="60" height="60" rx="13" fill="#0a0b09" stroke="#2a2f26" stroke-width="2"/>
+  <!-- The eye that watches the archive -->
+  <g filter="url(#glow)">
+    <path d="M8 32 Q32 10 56 32 Q32 54 8 32 Z" fill="none" stroke="#8fe08a" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="32" cy="32" r="10" fill="#e3ac52"/>
+    <ellipse cx="32" cy="32" rx="3" ry="8.5" fill="#d4483b"/>
+    <ellipse cx="32" cy="32" rx="1.2" ry="6" fill="#0a0b09"/>
+  </g>
+  <rect x="2" y="2" width="60" height="60" rx="13" fill="url(#scan)"/>
+</svg>
