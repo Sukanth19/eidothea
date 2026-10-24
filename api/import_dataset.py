@@ -12,6 +12,7 @@ import re
 import pandas as pd
 
 from app import db
+from app.gaming import with_gaming_category
 
 HF_PATH = "hf://datasets/DavidGetter1/creepypastas/creepypastas.csv"
 
@@ -82,6 +83,10 @@ def load(source: str) -> pd.DataFrame:
     df["minutes"] = minutes.fillna(estimated).astype(int)
     df["categories_list"] = df["categories"].fillna("").map(split_categories)
     df["tags_list"] = df["tags"].map(split_tags)
+    df["categories_list"] = [
+        with_gaming_category(cats, title, tags, body)
+        for cats, title, tags, body in zip(df["categories_list"], df["story_name"], df["tags_list"], df["body"])
+    ]
     return df
 
 

@@ -147,6 +147,7 @@ Removing an account also deletes that account's stories.
 - **Import options:** `import_dataset.py --replace` re-imports from scratch, and `--csv path.csv` imports from a local copy instead of Hugging Face.
 - **Authors:** the dataset has no author column. About 1,360 stories end with a "Credit To – Name" line, and the importer pulls the author's name from it. The rest show as "Unknown author".
 - **Cut-off stories:** 278 stories in the dataset are cut off at 32,767 characters, the Excel cell limit. They're marked as cut off on the story page.
+- **Video game stories** are put in the "Video Games and Gaming" category automatically, on import and whenever a story is posted or edited (`api/app/gaming.py`). `api/tag_games.py` re-applies it to the existing database.
 - **Editing imports:** imported stories have no owner, so only moderators and above can edit them.
 
 ### Running parts by hand

@@ -227,6 +227,9 @@ button.chip.on { color: var(--bg); background: var(--amber); border-color: var(-
 .badge.import { color: var(--amber); }
 
 /* ---------- Toolbar / pagination ---------- */
+.chips.quick { margin-top: 1.2rem; }
+.chips.quick .chip { font-family: var(--term); font-size: 1.05rem; letter-spacing: .08em; padding: .1rem .75rem; }
+
 .toolbar { display: grid; grid-template-columns: minmax(200px, 2fr) repeat(3, minmax(140px, 1fr)); gap: .7rem; margin: 1rem 0 1.5rem; }
 .toolbar input, .toolbar select { margin: 0; }
 @media (max-width: 760px) { .toolbar { grid-template-columns: 1fr 1fr; } .toolbar input { grid-column: 1 / -1; } }

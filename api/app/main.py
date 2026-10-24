@@ -10,6 +10,7 @@ from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
 from . import db
+from .gaming import with_gaming_category
 from .security import (
     ROLE_LEVEL,
     SESSION_COOKIE,
@@ -271,10 +272,11 @@ def get_story(story_id: int, conn: Conn, user: OptionalUser):
 
 @app.post("/api/stories", status_code=201)
 def create_story(story: StoryIn, conn: Conn, user: CurrentUser):
+    categories = with_gaming_category(story.categories, story.title, story.tags, story.body)
     cur = conn.execute(
         """INSERT INTO stories (title, body, author_id, tags, categories, reading_minutes, source)
            VALUES (?, ?, ?, ?, ?, ?, 'user')""",
-        (story.title, story.body, user["id"], json.dumps(story.tags), json.dumps(story.categories),
+        (story.title, story.body, user["id"], json.dumps(story.tags), json.dumps(categories),
          reading_minutes(story.body)),
     )
     conn.commit()
@@ -293,6 +295,13 @@ def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: CurrentUser
     if "body" in changes:
         changes["reading_minutes"] = reading_minutes(changes["body"])
         changes["truncated"] = 0
+    if {"title", "body", "tags", "categories"} & changes.keys():
+        changes["categories"] = with_gaming_category(
+            changes.get("categories", json.loads(existing["categories"])),
+            changes.get("title", existing["title"]),
+            changes.get("tags", json.loads(existing["tags"])),
+            changes.get("body", existing["body"]),
+        )
     for key in ("tags", "categories"):
         if key in changes:
             changes[key] = json.dumps(changes[key])

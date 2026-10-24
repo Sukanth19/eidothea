@@ -4,6 +4,16 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useTransition } from "react";
 import type { Category } from "@/lib/types";
 
+// One-click shortcuts shown above the toolbar; video games first, as asked
+const QUICK = [
+  { label: "VIDEO GAMES", category: "Video Games and Gaming" },
+  { label: "CRYPTIDS", category: "Monsters, Creatures, and Cryptids" },
+  { label: "GHOSTS", category: "Ghosts and Spirits" },
+  { label: "ENTITIES", category: "Beings and Entities" },
+  { label: "THE INTERNET", category: "Technology, the Internet, and the Deep Web" },
+  { label: "RITUALS", category: "Rites and Rituals" },
+];
+
 export function Filters({ categories }: { categories: Category[] }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -29,34 +39,52 @@ export function Filters({ categories }: { categories: Category[] }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
+  const current = params.get("category") ?? "";
+  const known = new Set(categories.map(c => c.name));
+
   return (
-    <div className="toolbar" style={{ opacity: pending ? 0.6 : 1, transition: "opacity .2s" }}>
-      <input
-        type="search"
-        value={q}
-        onChange={e => setQ(e.target.value)}
-        placeholder="> search title, tag or author"
-        aria-label="Search stories"
-      />
-      <select value={params.get("category") ?? ""} onChange={e => update({ category: e.target.value })} aria-label="Category">
-        <option value="">ALL CATEGORIES</option>
-        {categories.map(c => (
-          <option key={c.name} value={c.name}>
-            {c.name} ({c.count})
-          </option>
+    <>
+      <div className="chips quick" role="group" aria-label="Quick filters">
+        {QUICK.filter(f => known.has(f.category)).map(f => (
+          <button
+            type="button"
+            key={f.category}
+            className={`chip${current === f.category ? " on" : ""}`}
+            aria-pressed={current === f.category}
+            onClick={() => update({ category: current === f.category ? "" : f.category })}
+          >
+            {f.label}
+          </button>
         ))}
-      </select>
-      <select value={params.get("sort") ?? "new"} onChange={e => update({ sort: e.target.value === "new" ? "" : e.target.value })} aria-label="Sort">
-        <option value="new">NEWEST</option>
-        <option value="rating">HIGHEST RATED</option>
-        <option value="short">SHORTEST</option>
-        <option value="long">LONGEST</option>
-      </select>
-      <select value={params.get("source") ?? "all"} onChange={e => update({ source: e.target.value === "all" ? "" : e.target.value })} aria-label="Source">
-        <option value="all">ALL SOURCES</option>
-        <option value="user">COMMUNITY ONLY</option>
-        <option value="import">CLASSIC ARCHIVE</option>
-      </select>
-    </div>
+      </div>
+      <div className="toolbar" style={{ opacity: pending ? 0.6 : 1, transition: "opacity .2s" }}>
+        <input
+          type="search"
+          value={q}
+          onChange={e => setQ(e.target.value)}
+          placeholder="> search title, tag or author"
+          aria-label="Search stories"
+        />
+        <select value={params.get("category") ?? ""} onChange={e => update({ category: e.target.value })} aria-label="Category">
+          <option value="">ALL CATEGORIES</option>
+          {categories.map(c => (
+            <option key={c.name} value={c.name}>
+              {c.name} ({c.count})
+            </option>
+          ))}
+        </select>
+        <select value={params.get("sort") ?? "new"} onChange={e => update({ sort: e.target.value === "new" ? "" : e.target.value })} aria-label="Sort">
+          <option value="new">NEWEST</option>
+          <option value="rating">HIGHEST RATED</option>
+          <option value="short">SHORTEST</option>
+          <option value="long">LONGEST</option>
+        </select>
+        <select value={params.get("source") ?? "all"} onChange={e => update({ source: e.target.value === "all" ? "" : e.target.value })} aria-label="Source">
+          <option value="all">ALL SOURCES</option>
+          <option value="user">COMMUNITY ONLY</option>
+          <option value="import">CLASSIC ARCHIVE</option>
+        </select>
+      </div>
+    </>
   );
 }
