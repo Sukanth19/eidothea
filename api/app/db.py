@@ -118,6 +118,20 @@ CREATE TABLE IF NOT EXISTS applications (
 
 CREATE INDEX IF NOT EXISTS applications_status ON applications(status);
 
+-- What readers with a confirmed email read, for trending and recommendations
+CREATE TABLE IF NOT EXISTS reads (
+    user_id  INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    story_id INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    first_at TEXT NOT NULL DEFAULT (datetime('now')),
+    last_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    progress REAL NOT NULL DEFAULT 0,  -- furthest point reached, 0-1
+    seconds  INTEGER NOT NULL DEFAULT 0,  -- time spent with the story on screen
+    finished INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, story_id)
+);
+
+CREATE INDEX IF NOT EXISTS reads_story ON reads(story_id, last_at);
+
 -- Genres writers can pick on top of the dataset's categories. Mods add more.
 CREATE TABLE IF NOT EXISTS genres (
     name       TEXT PRIMARY KEY COLLATE NOCASE,

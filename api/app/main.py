@@ -8,8 +8,8 @@ from typing import Annotated, Literal
 from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
-from . import accounts, db, guard, insights
-from .accounts import MemberUser, grant_membership, user_json
+from . import accounts, db, guard, insights, reading
+from .accounts import MemberUser, ReaderUser, grant_membership, user_json
 from .deps import Conn, CurrentUser, ModUser, OptionalUser
 from .gaming import with_gaming_category
 from .security import ROLE_LEVEL, assignable_roles, can_edit_story, can_manage_user, level
@@ -26,6 +26,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="Eidothea", lifespan=lifespan)
 app.include_router(accounts.router)
 app.include_router(insights.router)
+app.include_router(reading.router)
 
 
 # --------------------------------------------------------------------------- models
@@ -214,7 +215,7 @@ def list_stories(
     user: OptionalUser,
     q: str = "",
     category: str = "",
-    sort: Literal["new", "rating", "short", "long"] = "new",
+    sort: Literal["new", "trending", "rating", "short", "long"] = "new",
     source: Literal["all", "user", "import"] = "all",
     mine: bool = False,
     author: str = "",
@@ -244,12 +245,14 @@ def list_stories(
     where_sql = "WHERE " + " AND ".join(where)
     order_sql = {
         "new": ("COALESCE(s.updated_at, s.published_at) DESC, s.id DESC" if status == "draft" else "s.published_at DESC, s.id DESC"),
+        "trending": "COALESCE(t.heat, 0) DESC, score IS NULL, score DESC, s.id DESC",
         "rating": "score IS NULL, score DESC, rating_count DESC, s.id",
         "short": "s.reading_minutes ASC, s.id",
         "long": "s.reading_minutes DESC, s.id",
     }[sort]
 
-    base = f"FROM {STORY_FROM} {where_sql}"
+    trending = f" LEFT JOIN ({reading.HEAT_SQL}) t ON t.story_id = s.id" if sort == "trending" else ""
+    base = f"FROM {STORY_FROM}{trending} {where_sql}"
     total = conn.execute(f"SELECT COUNT(*) {base}", args).fetchone()[0]
     rows = conn.execute(
         f"SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt {base} ORDER BY {order_sql} LIMIT ? OFFSET ?",
@@ -261,6 +264,28 @@ def list_stories(
         "page": page,
         "pages": max(1, -(-total // per_page)),
     }
+
+
+@app.get("/api/stories/for-you")
+def for_you(conn: Conn, user: ReaderUser, limit: int = Query(6, ge=1, le=24)):
+    """Unread stories in the genres this reader finishes and rates well, hottest first."""
+    cats = conn.execute(reading.affinity_sql(), {"uid": user["id"]}).fetchall()
+    if not cats:
+        return {"items": [], "based_on": []}
+    rows = conn.execute(
+        f"""WITH cats AS ({reading.affinity_sql()})
+            SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt,
+                   (SELECT SUM(c.w) FROM json_each(s.categories) j JOIN cats c ON c.cat = j.value) AS fit
+            FROM {STORY_FROM} LEFT JOIN ({reading.HEAT_SQL}) t ON t.story_id = s.id
+            WHERE s.status = 'published' AND s.author_id IS NOT :uid
+              AND s.id NOT IN (SELECT story_id FROM reads WHERE user_id = :uid)
+              AND s.id NOT IN (SELECT story_id FROM story_ratings WHERE user_id = :uid)
+              AND fit > 0
+            ORDER BY fit * COALESCE(score, 6) / 10 + COALESCE(t.heat, 0) * 0.2 DESC, s.id DESC
+            LIMIT :limit""",
+        {"uid": user["id"], "limit": limit},
+    ).fetchall()
+    return {"items": [story_json(r, user) for r in rows], "based_on": [c["cat"] for c in cats[:3]]}
 
 
 @app.get("/api/stories/random")
