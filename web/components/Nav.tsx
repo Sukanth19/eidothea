@@ -17,7 +17,7 @@ export function Nav({ user }: { user: User | null }) {
   // Phones get a menu button instead of the full row of links; close it after navigating
   useEffect(() => setOpen(false), [pathname]);
 
-  const links = [{ href: "/stories", label: "ARCHIVE" }];
+  const links = [{ href: "/stories", label: "ARCHIVE" }, { href: "/prompts", label: "PROMPTS" }];
   if (user) {
     if (user.member) links.push({ href: "/stories/new", label: "WRITE" }, { href: "/me", label: "MY STORIES" });
     else links.push({ href: "/membership", label: "BECOME A MEMBER" });

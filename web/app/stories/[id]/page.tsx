@@ -80,6 +80,9 @@ export default async function StoryPage({ params, searchParams }: Props) {
         </div>
         <h1 style={{ marginTop: ".5rem" }}><ScrambleText text={story.title || "Untitled draft"} duration={700} haunt={!draft} /></h1>
         {story.subtitle && <p className="subtitle">{story.subtitle}</p>}
+        {story.prompt && (
+          <p className="caps muted prompt-line">WRITTEN FOR THE PROMPT <Link href={`/prompts/${story.prompt.id}`}>{story.prompt.title}</Link></p>
+        )}
         <div className="meta">
           <span>
             BY{" "}

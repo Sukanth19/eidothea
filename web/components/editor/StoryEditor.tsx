@@ -10,7 +10,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "@/lib/client-api";
 import { readingMinutes } from "@/lib/format";
-import { WARNING_LABEL, type ContentWarning, type Story, type User } from "@/lib/types";
+import { WARNING_LABEL, type ContentWarning, type Prompt, type Story, type User } from "@/lib/types";
 import { DeleteStoryButton } from "../DeleteStoryButton";
 import { Icon } from "../Icon";
 import { Markup } from "../Markup";
@@ -41,7 +41,16 @@ function useAutoHeight(value: string) {
  * The writing screen. Drafts save themselves a moment after you stop typing;
  * published stories only change when you press Update, so readers never see half an edit.
  */
-export function StoryEditor({ story, genres = [], categories, user }: { story?: Story; genres?: string[]; categories: string[]; user: User }) {
+export function StoryEditor({ story, genres = [], categories, user, prompts = [], prompt }: {
+  story?: Story;
+  genres?: string[];
+  categories: string[];
+  user: User;
+  /** Open prompts the story can be entered into */
+  prompts?: Prompt[];
+  /** A new story's prompt, from "write for this" */
+  prompt?: number;
+}) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>(story?.status ?? "draft");
   const [title, setTitle] = useState(story?.title ?? "");
@@ -49,6 +58,7 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
   const [tags, setTags] = useState((story?.tags ?? []).join(", "));
   const [picked, setPicked] = useState<string[]>(story?.categories ?? []);
   const [warnings, setWarnings] = useState<ContentWarning[]>(story?.warnings ?? []);
+  const [promptId, setPromptId] = useState<number | null>(story ? story.prompt?.id ?? null : prompt ?? null);
   const [save, setSave] = useState<SaveState>(story ? "saved" : "new");
   const [error, setError] = useState("");
   const [panel, setPanel] = useState<null | "settings" | "publish">(null);
@@ -59,9 +69,9 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
   useEffect(() => setMounted(true), []);
 
   // Saving runs from timers and editor callbacks, so it reads the latest values from refs
-  const latest = useRef({ title, subtitle, tags, picked, warnings, status });
+  const latest = useRef({ title, subtitle, tags, picked, warnings, promptId, status });
   useEffect(() => {
-    latest.current = { title, subtitle, tags, picked, warnings, status };
+    latest.current = { title, subtitle, tags, picked, warnings, promptId, status };
   });
   const idRef = useRef<number | null>(story?.id ?? null);
   const version = useRef(0);
@@ -147,6 +157,7 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
         tags: f.tags.split(",").map(t => t.trim()).filter(Boolean),
         categories: f.picked,
         warnings: f.warnings,
+        prompt_id: f.promptId ?? 0,
         ...extra,
       };
       if (!idRef.current && !extra.status && !payload.title && !payload.subtitle && !payload.body) {
@@ -397,6 +408,18 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
                       <input id="tags" value={tags} onChange={e => edit(setTags)(e.target.value)} placeholder="woods, radio, sleep paralysis" />
                       <p className="hint">Comma-separated, up to 15.</p>
                     </div>
+
+                    {(prompts.length > 0 || story?.prompt) && (
+                      <div className="field">
+                        <label htmlFor="prompt">Written for a prompt</label>
+                        <select id="prompt" value={promptId ?? ""} onChange={e => edit(setPromptId)(e.target.value ? Number(e.target.value) : null)}>
+                          <option value="">No prompt</option>
+                          {/* A closed prompt it's already in stays choosable */}
+                          {story?.prompt && !prompts.some(p => p.id === story.prompt!.id) && <option value={story.prompt.id}>{story.prompt.title}</option>}
+                          {prompts.map(p => <option key={p.id} value={p.id}>{p.title}</option>)}
+                        </select>
+                      </div>
+                    )}
 
                     <div className="field">
                       <label>Content warnings</label>

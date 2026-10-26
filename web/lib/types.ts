@@ -140,6 +140,8 @@ interface StoryBase {
   published_at: string;
   updated_at: string | null;
   can_edit: boolean;
+  /** The prompt it was written for */
+  prompt: { id: number; title: string } | null;
   /** How far the logged-in reader got (confirmed accounts only); null if never opened */
   my_read?: { progress: number; finished: boolean } | null;
 }
@@ -154,6 +156,18 @@ export interface Story extends StoryBase {
   recommended?: boolean;
   /** Saved to the logged-in reader's list */
   bookmarked?: boolean;
+}
+
+/** A writing prompt the keepers set */
+export interface Prompt {
+  id: number;
+  title: string;
+  body: string;
+  starts_on: string;
+  /** Last day for entries */
+  ends_on: string;
+  status: "upcoming" | "open" | "closed";
+  entries: number;
 }
 
 export interface RatingState {

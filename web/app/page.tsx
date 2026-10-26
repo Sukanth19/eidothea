@@ -3,17 +3,20 @@ import { CountUp } from "@/components/CountUp";
 import { Hero } from "@/components/Hero";
 import { StoryGrid } from "@/components/StoryCard";
 import { apiGet, currentUser } from "@/lib/server-api";
-import type { Category, ForYou, Stats, StoryPage, StorySummary } from "@/lib/types";
+import { PromptCard } from "@/components/Prompts";
+import type { Category, ForYou, Prompt, Stats, StoryPage, StorySummary } from "@/lib/types";
 
 export default async function Home() {
-  const [user, stats, trending, top, fresh, categories] = await Promise.all([
+  const [user, stats, trending, top, fresh, categories, prompts] = await Promise.all([
     currentUser(),
     apiGet<Stats>("/api/stats"),
     apiGet<StoryPage>("/api/stories?sort=trending&per_page=6"),
     apiGet<StoryPage>("/api/stories?sort=rating&per_page=6"),
     apiGet<StoryPage>("/api/stories?source=user&per_page=3"),
     apiGet<Category[]>("/api/categories"),
+    apiGet<Prompt[]>("/api/prompts"),
   ]);
+  const openPrompt = prompts?.find(p => p.status === "open");
   const [forYou, followed, unfinished] = user?.email_verified
     ? await Promise.all([
         apiGet<ForYou>("/api/stories/for-you?limit=3"),
@@ -33,6 +36,16 @@ export default async function Home() {
           <div className="stat"><div className="n"><CountUp to={stats.users} /></div><div className="l">Souls registered</div></div>
           <div className="stat"><div className="n"><CountUp to={Math.round(stats.minutes / 60)} /></div><div className="l">Hours of reading</div></div>
         </div>
+      )}
+
+      {openPrompt && (
+        <>
+          <div className="section-head">
+            <h2>This prompt is open</h2>
+            <Link href="/prompts" className="caps">ALL PROMPTS →</Link>
+          </div>
+          <PromptCard prompt={openPrompt} user={user} />
+        </>
       )}
 
       {unfinished && unfinished.items.length > 0 && (

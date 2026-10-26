@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { GenreManager, Queue } from "@/components/Membership";
+import { PromptManager } from "@/components/Prompts";
 import { ReportQueue } from "@/components/Reports";
 import { apiGet, currentUser } from "@/lib/server-api";
-import { ROLE_LEVEL, type Genre, type OpenReport, type QueuedApplication } from "@/lib/types";
+import { ROLE_LEVEL, type Genre, type OpenReport, type Prompt, type QueuedApplication } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Keepers" };
 
@@ -21,10 +22,11 @@ export default async function ModPage() {
     );
   }
 
-  const [reports, queue, genres] = await Promise.all([
+  const [reports, queue, genres, prompts] = await Promise.all([
     apiGet<OpenReport[]>("/api/reports"),
     apiGet<QueuedApplication[]>("/api/applications"),
     apiGet<Genre[]>("/api/genres"),
+    apiGet<Prompt[]>("/api/prompts"),
   ]);
 
   return (
@@ -36,6 +38,9 @@ export default async function ModPage() {
       <h2>Waiting list</h2>
       <p className="muted" style={{ maxWidth: "70ch" }}>Readers asking to become members. Letting someone in means they can post, comment and rate. They get an email either way.</p>
       <Queue initial={queue ?? []} />
+      <h2>Prompts</h2>
+      <p className="muted" style={{ maxWidth: "70ch" }}>A theme and a deadline for members to write to. Dates count anywhere on Earth, so nobody&apos;s timezone shuts them out.</p>
+      <PromptManager initial={prompts ?? []} />
       <h2>Genres</h2>
       <p className="muted" style={{ maxWidth: "70ch" }}>Offered to writers above the archive&apos;s original categories.</p>
       <GenreManager initial={genres ?? []} />

@@ -183,6 +183,18 @@ CREATE TABLE IF NOT EXISTS genres (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Writing prompts the keepers set, open for entries between two dates (inclusive, see prompts.PROMPT_COLUMNS)
+CREATE TABLE IF NOT EXISTS prompts (
+    id         INTEGER PRIMARY KEY,
+    title      TEXT NOT NULL,
+    body       TEXT NOT NULL DEFAULT '',
+    starts_on  TEXT NOT NULL,  -- YYYY-MM-DD
+    ends_on    TEXT NOT NULL,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    CHECK (ends_on >= starts_on)
+);
+
 -- Readers flagging a story or a comment for the keepers. Goes when the thing reported does.
 CREATE TABLE IF NOT EXISTS reports (
     id          INTEGER PRIMARY KEY,
@@ -236,6 +248,7 @@ MIGRATIONS = {
         "status": "TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published'))",
         "announced_at": "TEXT",  # first went live; set once, so republishing doesn't count as new
         "warnings": "TEXT NOT NULL DEFAULT '[]'",  # JSON array of content warnings, see main.ContentWarning
+        "prompt_id": "INTEGER REFERENCES prompts(id) ON DELETE SET NULL",  # written for this prompt
     },
     "comments": {
         "parent_id": "INTEGER REFERENCES comments(id) ON DELETE CASCADE",  # a reply; always to a top-level comment

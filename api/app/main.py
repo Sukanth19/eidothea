@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
-from . import accounts, db, guard, insights, mail, moderation, reading, social
+from . import accounts, db, guard, insights, mail, moderation, prompts, reading, social
 from .notify import notify
 from .accounts import MemberUser, ReaderUser, grant_membership, user_json
 from .deps import Conn, CurrentUser, ModUser, OptionalUser
@@ -31,6 +31,7 @@ app = FastAPI(title="Eidothea", lifespan=lifespan)
 app.include_router(accounts.router)
 app.include_router(insights.router)
 app.include_router(moderation.router)
+app.include_router(prompts.router)
 app.include_router(reading.router)
 app.include_router(social.router)
 
@@ -52,6 +53,7 @@ class StoryIn(BaseModel):
     tags: list[str] = Field(default_factory=list, max_length=15)
     categories: list[str] = Field(default_factory=list, max_length=5)
     warnings: list[ContentWarning] = Field(default_factory=list, max_length=9)
+    prompt_id: int | None = Field(default=None, ge=0)  # written for this prompt; 0 clears it
     status: Status = "published"
 
     @field_validator("title", "subtitle", "body")
@@ -84,6 +86,7 @@ class StoryPatch(StoryIn):
     tags: list[str] | None = Field(default=None, max_length=15)
     categories: list[str] | None = Field(default=None, max_length=5)
     warnings: list[ContentWarning] | None = Field(default=None, max_length=9)
+    prompt_id: int | None = Field(default=None, ge=0)
     status: Status | None = None
 
 
@@ -158,6 +161,7 @@ MIN_BODY = 50
 
 STORY_FROM = """stories s
     LEFT JOIN users u ON u.id = s.author_id
+    LEFT JOIN prompts p ON p.id = s.prompt_id
     LEFT JOIN (SELECT story_id, COUNT(*) AS n, SUM(score) AS total FROM story_ratings GROUP BY story_id) r
            ON r.story_id = s.id"""
 
@@ -165,7 +169,7 @@ STORY_COLUMNS = f"""
     s.id, s.title, s.subtitle, s.author_id, s.author_name, u.username AS author_username,
     COALESCE(u.profile_public, 0) AS author_public, COALESCE(u.role, 'user') AS author_role,
     s.tags, s.categories, s.warnings, s.rating AS archive_rating, s.reading_minutes, s.source, s.truncated,
-    s.status, s.published_at, s.updated_at,
+    s.status, s.published_at, s.updated_at, s.prompt_id, p.title AS prompt_title,
     COALESCE(r.n, 0) AS rating_count,
     CASE WHEN s.rating IS NULL THEN r.total * 1.0 / r.n
          ELSE (s.rating * {ARCHIVE_WEIGHT} + COALESCE(r.total, 0)) / ({ARCHIVE_WEIGHT} + COALESCE(r.n, 0))
@@ -197,6 +201,7 @@ def story_json(row, user, *, body: bool = False) -> dict:
         "status": row["status"],
         "published_at": row["published_at"],
         "updated_at": row["updated_at"],
+        "prompt": {"id": row["prompt_id"], "title": row["prompt_title"]} if row["prompt_id"] else None,
         "can_edit": can_edit_story(user, row),
     }
     if body:
@@ -272,6 +277,7 @@ def list_stories(
     recommended_by: str = "",
     following: bool = False,
     bookmarked: bool = False,
+    prompt: int | None = None,
     status: Status = "published",
     page: int = Query(1, ge=1),
     per_page: int = Query(24, ge=1, le=60),
@@ -296,6 +302,9 @@ def list_stories(
     if source != "all":
         where.append("s.source = ?")
         args.append(source)
+    if prompt is not None:
+        where.append("s.prompt_id = ?")
+        args.append(prompt)
     if author:
         where.append("u.username = ?")
         args.append(author)
@@ -452,11 +461,14 @@ def create_story(story: StoryIn, conn: Conn, user: MemberUser, tasks: Background
         check_publishable(story.title, story.body)
         guard.check_daily_cap(conn, user, "stories")
     categories = with_gaming_category(story.categories, story.title, story.tags, story.body)
+    if story.prompt_id:
+        prompts.check_open(conn, story.prompt_id)
     cur = conn.execute(
-        """INSERT INTO stories (title, subtitle, body, author_id, tags, categories, warnings, reading_minutes, source, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'user', ?)""",
+        """INSERT INTO stories (title, subtitle, body, author_id, tags, categories, warnings, prompt_id, reading_minutes,
+                                source, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'user', ?)""",
         (story.title, story.subtitle, story.body, user["id"], json.dumps(story.tags), json.dumps(categories),
-         json.dumps(story.warnings), reading_minutes(story.body), story.status),
+         json.dumps(story.warnings), story.prompt_id or None, reading_minutes(story.body), story.status),
     )
     if story.status == "published":
         social.announce_story(conn, cur.lastrowid, user["id"], tasks)
@@ -482,6 +494,11 @@ def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser,
         check_publishable(changes.get("title", existing["title"]), changes.get("body", existing["body"]))
         if debut:
             guard.check_daily_cap(conn, user, "stories")
+    if "prompt_id" in changes:
+        if not changes["prompt_id"]:
+            changes["prompt_id"] = None
+        elif changes["prompt_id"] != existing["prompt_id"]:  # staying in a closed prompt is fine
+            prompts.check_open(conn, changes["prompt_id"])
     if "body" in changes:
         changes["reading_minutes"] = reading_minutes(changes["body"])
         changes["truncated"] = 0
