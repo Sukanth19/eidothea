@@ -20,6 +20,7 @@ export function Nav({ user }: { user: User | null }) {
   if (user) {
     links.push({ href: "/stories/new", label: "WRITE" }, { href: "/me", label: "MY STORIES" });
     if (ROLE_LEVEL[user.role] >= ROLE_LEVEL.admin) links.push({ href: "/admin", label: "CONTROL" });
+    if (user.insights) links.push({ href: "/insights", label: "INSIGHTS" });
   }
 
   // Longest matching prefix wins, so /stories/new doesn't also light up /stories

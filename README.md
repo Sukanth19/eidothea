@@ -154,6 +154,9 @@ Removing an account also deletes that account's stories.
 - **Ratings:** readers rate stories 1–10. An imported story's rating from the dataset counts as 5 votes, so reader scores move it gradually. Authors can't rate their own stories.
 - **Comments:** every published story has comments with likes and dislikes. Authors and moderators can delete comments.
 - **Sharing:** every story has a share panel. On phones, *Share to story* hands a 1080×1920 card (`/stories/<id>/card`) to the phone's share menu, so Instagram or Snapchat open it in their story editor and the reader decides whether to post. Pasted links get a preview image too (`opengraph-image`). The card fonts live in `web/assets/fonts`.
+- **Insights** (`/insights`): visitors per day, most-read stories, where visitors come from (share-link tags like `?ref=instagram`, or the referring site), devices, how members heard about the site, new sign-ups, and a file for every member. Only the Overseer and members they grant access to (from a member's file) can open it. Visits are counted without cookies or stored IP addresses: each visitor is a hash salted with a secret that is replaced daily. What's collected is listed at `/privacy`.
+- **Profiles:** members can add a display name, bio and Instagram handle (*My stories → Edit profile*). Profiles are private to the Overseer and insights viewers unless the member makes theirs public at `/u/<username>`.
+- **Sign-up alerts:** to get a Discord message when someone joins, create a webhook (Discord channel → *Edit channel → Integrations → Webhooks*), add `SIGNUP_WEBHOOK_URL=<the webhook url>` to `/etc/eidothea.env` on the server, and run `sudo systemctl restart eidothea-api`. `setup.sh` keeps that line when re-run.
 - **Upgrading:** new columns and tables are added to an existing `archive.db` when the API starts. Nothing needs to be run by hand.
 
 ### Deploy to Azure (free with Azure for Students)
