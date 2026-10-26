@@ -220,6 +220,31 @@ MIGRATIONS = {
 }
 
 
+# Full-text search over stories (see list_stories), kept in step with the table by triggers.
+# Runs after MIGRATIONS, since it reads columns that were added later.
+FTS = """
+CREATE VIRTUAL TABLE IF NOT EXISTS stories_fts USING fts5(
+    title, subtitle, tags, body,
+    content='stories', content_rowid='id', tokenize='porter unicode61 remove_diacritics 2'
+);
+
+CREATE TRIGGER IF NOT EXISTS stories_fts_insert AFTER INSERT ON stories BEGIN
+    INSERT INTO stories_fts (rowid, title, subtitle, tags, body) VALUES (new.id, new.title, new.subtitle, new.tags, new.body);
+END;
+
+CREATE TRIGGER IF NOT EXISTS stories_fts_delete AFTER DELETE ON stories BEGIN
+    INSERT INTO stories_fts (stories_fts, rowid, title, subtitle, tags, body)
+    VALUES ('delete', old.id, old.title, old.subtitle, old.tags, old.body);
+END;
+
+CREATE TRIGGER IF NOT EXISTS stories_fts_update AFTER UPDATE OF title, subtitle, tags, body ON stories BEGIN
+    INSERT INTO stories_fts (stories_fts, rowid, title, subtitle, tags, body)
+    VALUES ('delete', old.id, old.title, old.subtitle, old.tags, old.body);
+    INSERT INTO stories_fts (rowid, title, subtitle, tags, body) VALUES (new.id, new.title, new.subtitle, new.tags, new.body);
+END;
+"""
+
+
 # The genres Eidothea starts with; the dataset's own categories already cover the classics
 SEED_GENRES = [
     ("Original Cryptids", "Creatures of your own making: sightings, field notes, the lore around them."),
@@ -259,6 +284,10 @@ def init() -> None:
             conn.execute("UPDATE stories SET announced_at = published_at WHERE status = 'published'")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users(email COLLATE NOCASE) WHERE email IS NOT NULL")
         conn.execute("CREATE INDEX IF NOT EXISTS stories_status ON stories(status)")
+        fresh = not conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'stories_fts'").fetchone()
+        conn.executescript(FTS)
+        if fresh:  # index the stories that were there before search existed
+            conn.execute("INSERT INTO stories_fts (stories_fts) VALUES ('rebuild')")
         # Only into an empty table, so a genre a mod removed stays removed
         if not conn.execute("SELECT 1 FROM genres LIMIT 1").fetchone():
             conn.executemany("INSERT INTO genres (name, blurb) VALUES (?, ?)", SEED_GENRES)

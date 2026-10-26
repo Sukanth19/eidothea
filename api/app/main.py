@@ -1,6 +1,7 @@
 """Eidothea API. Run with: uvicorn app.main:app --reload (from api/)."""
 
 import json
+import re
 import sqlite3
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
@@ -123,6 +124,20 @@ def like(term: str) -> str:
     return f"%{escaped}%"
 
 
+# Stories matching a search, best first: a hit in the title counts most, then subtitle and tags, then the text
+SEARCH_SQL = """SELECT rowid AS id, bm25(stories_fts, 10.0, 4.0, 4.0, 1.0) AS rank
+                FROM stories_fts WHERE stories_fts MATCH ?"""
+
+
+def fts_query(q: str) -> str | None:
+    """A search box's words as a full-text query: every word must appear (in any form:
+    "haunted" finds "haunting"), and the last one may be half-typed."""
+    words = re.findall(r"[^\W_]+", q)[:12]
+    if not words:
+        return None
+    return " ".join(f'"{w}"' for w in words) + "*"
+
+
 # A story's score blends the source dataset's rating, counted as this many votes,
 # with readers' 1-10 scores. Community stories are scored by readers alone.
 ARCHIVE_WEIGHT = 5
@@ -221,7 +236,7 @@ def list_stories(
     user: OptionalUser,
     q: str = "",
     category: str = "",
-    sort: Literal["new", "trending", "rating", "short", "long"] = "new",
+    sort: Literal["relevance", "new", "trending", "rating", "short", "long"] | None = None,
     source: Literal["all", "user", "import"] = "all",
     mine: bool = False,
     author: str = "",
@@ -232,10 +247,20 @@ def list_stories(
     page: int = Query(1, ge=1),
     per_page: int = Query(24, ge=1, le=60),
 ):
+    # Joins come first in the SQL, so their arguments go first too
+    with_sql, joins, join_args = "", "", []
     where, args = ["s.status = ?"], [status]
-    if q.strip():
-        where.append("(s.title LIKE ? ESCAPE '\\' OR s.tags LIKE ? ESCAPE '\\' OR COALESCE(u.username, s.author_name) LIKE ? ESCAPE '\\')")
-        args += [like(q.strip())] * 3
+    match = fts_query(q)
+    if match:
+        # Materialized: run the search once, not once per story. `ft` is the stories with every word in the title.
+        with_sql = f"WITH f AS MATERIALIZED ({SEARCH_SQL}), ft AS MATERIALIZED ({SEARCH_SQL}) "
+        joins += " LEFT JOIN f ON f.id = s.id LEFT JOIN ft ON ft.id = s.id"
+        join_args += [match, f"title : ({match})"]
+        where.append("(f.id IS NOT NULL OR COALESCE(u.username, s.author_name) LIKE ? ESCAPE '\\')")
+        args.append(like(q.strip()))
+    elif q.strip():  # only punctuation: nothing for the index to go on
+        where.append("s.title LIKE ? ESCAPE '\\'")
+        args.append(like(q.strip()))
     if category:
         where.append("EXISTS (SELECT 1 FROM json_each(s.categories) WHERE value = ?)")
         args.append(category)
@@ -260,12 +285,11 @@ def list_stories(
         where.append("s.author_id = ?")
         args.append(user["id"])
 
-    joins, join_args = "", []
     if bookmarked:
         if not user:
             raise HTTPException(401, "You need to log in first.")
-        joins = " JOIN bookmarks bm ON bm.story_id = s.id AND bm.user_id = ?"
-        join_args = [user["id"]]
+        joins += " JOIN bookmarks bm ON bm.story_id = s.id AND bm.user_id = ?"
+        join_args.append(user["id"])
 
     where_sql = "WHERE " + " AND ".join(where)
     newest = (
@@ -273,7 +297,11 @@ def list_stories(
         else "COALESCE(s.updated_at, s.published_at) DESC, s.id DESC" if status == "draft"
         else "s.published_at DESC, s.id DESC"
     )
+    if not sort or (sort == "relevance" and not match):
+        sort = "relevance" if match else "new"
     order_sql = {
+        # Title matches first, then bm25 (lower is better); author-only matches last
+        "relevance": "f.rank IS NULL, ft.id IS NULL, f.rank, s.id DESC",
         "new": newest,
         "trending": "COALESCE(t.heat, 0) DESC, score IS NULL, score DESC, s.id DESC",
         "rating": "score IS NULL, score DESC, rating_count DESC, s.id",
@@ -284,13 +312,24 @@ def list_stories(
     trending = f" LEFT JOIN ({reading.HEAT_SQL}) t ON t.story_id = s.id" if sort == "trending" else ""
     base = f"FROM {STORY_FROM}{joins}{trending} {where_sql}"
     args = [*join_args, *args]
-    total = conn.execute(f"SELECT COUNT(*) {base}", args).fetchone()[0]
+    total = conn.execute(f"{with_sql}SELECT COUNT(*) {base}", args).fetchone()[0]
     rows = conn.execute(
-        f"SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt {base} ORDER BY {order_sql} LIMIT ? OFFSET ?",
+        f"{with_sql}SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt {base} ORDER BY {order_sql} LIMIT ? OFFSET ?",
         [*args, per_page, (page - 1) * per_page],
     ).fetchall()
+    items = [story_json(r, user) for r in rows]
+    if match and items:
+        # Show the part of the story that matched instead of its opening lines
+        hits = dict(conn.execute(
+            f"""SELECT rowid, snippet(stories_fts, 3, '', '', '…', 40) FROM stories_fts
+                WHERE stories_fts MATCH ? AND rowid IN ({','.join('?' * len(items))})""",
+            [match, *(i["id"] for i in items)],
+        ).fetchall())
+        for i in items:
+            if hits.get(i["id"]):
+                i["excerpt"] = hits[i["id"]]
     return {
-        "items": [story_json(r, user) for r in rows],
+        "items": items,
         "total": total,
         "page": page,
         "pages": max(1, -(-total // per_page)),

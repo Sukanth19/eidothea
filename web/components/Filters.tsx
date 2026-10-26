@@ -36,12 +36,15 @@ export function Filters({ categories }: { categories: Category[] }) {
   // Debounce typing so we don't hit the API on every keystroke
   useEffect(() => {
     if (q === (params.get("q") ?? "")) return;
-    const t = setTimeout(() => update({ q }), 350);
+    // "Best match" means nothing once the search box is empty
+    const t = setTimeout(() => update(q || params.get("sort") !== "relevance" ? { q } : { q, sort: "" }), 350);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [q]);
 
   const current = params.get("category") ?? "";
+  // Searches are sorted by best match unless asked otherwise
+  const defaultSort = params.get("q") ? "relevance" : "new";
   const known = new Set(categories.map(c => c.name));
 
   return (
@@ -64,7 +67,7 @@ export function Filters({ categories }: { categories: Category[] }) {
           type="search"
           value={q}
           onChange={e => setQ(e.target.value)}
-          placeholder="search title, tag or author"
+          placeholder="search titles, tags, writers and the stories themselves"
           aria-label="Search stories"
         />
         <select value={params.get("category") ?? ""} onChange={e => update({ category: e.target.value })} aria-label="Category">
@@ -75,7 +78,8 @@ export function Filters({ categories }: { categories: Category[] }) {
             </option>
           ))}
         </select>
-        <select value={params.get("sort") ?? "new"} onChange={e => update({ sort: e.target.value === "new" ? "" : e.target.value })} aria-label="Sort">
+        <select value={params.get("sort") ?? defaultSort} onChange={e => update({ sort: e.target.value === defaultSort ? "" : e.target.value })} aria-label="Sort">
+          {params.get("q") && <option value="relevance">BEST MATCH</option>}
           <option value="new">NEWEST</option>
           <option value="trending">TRENDING</option>
           <option value="rating">HIGHEST RATED</option>
