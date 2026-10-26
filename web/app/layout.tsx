@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Special_Elite, VT323 } from "next/font/google";
 import { Atmosphere, FxToggle } from "@/components/Atmosphere";
 import { Nav } from "@/components/Nav";
@@ -13,6 +13,14 @@ const vt = VT323({ subsets: ["latin"], weight: "400", variable: "--font-vt" });
 export const metadata: Metadata = {
   title: { default: "Eidothea", template: "%s · Eidothea" },
   description: "An archive of creepypastas, recovered and new.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  // Draw under the iPhone notch and home bar; the CSS pads with safe-area insets
+  viewportFit: "cover",
+  themeColor: "#0a0b09",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {

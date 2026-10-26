@@ -25,12 +25,15 @@ html { background: var(--bg); }
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   flex-direction: column;
   background: var(--bg);
   color: var(--text);
   font: 400 15px/1.7 var(--body);
-  padding-inline: 16px;
+  /* Phones in landscape put the notch on a side */
+  padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
+  -webkit-text-size-adjust: 100%;
 }
 
 a { color: var(--green); text-decoration: none; }
@@ -77,6 +80,7 @@ p { margin: 0 0 1em; }
 .nav .underline { position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--amber); box-shadow: 0 0 8px var(--amber); }
 .nav .whoami { color: var(--muted); font-size: 1.1rem; }
 .nav .whoami b { color: var(--amber); font-weight: 400; }
+.menu-btn { display: none; }
 
 main.view { flex: 1; padding-block: 1.5rem 5rem; }
 
@@ -361,14 +365,14 @@ html.hiccup main.view:has(.writer) { animation: none; }
 .writer-body hr.ProseMirror-selectednode::after { color: var(--amber); }
 .writer-body ::selection { background: rgba(143, 224, 138, .25); }
 
-.writer-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .55rem 16px; background: var(--bg); border-top: 1px solid var(--line); font-family: var(--term); font-size: 1.1rem; color: var(--muted); }
+.writer-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .55rem max(16px, env(safe-area-inset-right)) max(.55rem, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: var(--bg); border-top: 1px solid var(--line); font-family: var(--term); font-size: 1.1rem; color: var(--muted); }
 .writer-bottom button { font-size: 1.15rem; padding: .1rem .8rem; }
 
 .scrim { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .6); }
-.drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: min(440px, 100vw); overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line); padding: 1.2rem 1.4rem 2rem; display: flex; flex-direction: column; }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: min(440px, 100vw); overflow-y: auto; overscroll-behavior: contain; background: var(--panel); border-left: 1px solid var(--line); padding: max(1.2rem, env(safe-area-inset-top)) max(1.4rem, env(safe-area-inset-right)) 2rem 1.4rem; display: flex; flex-direction: column; }
 .drawer-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
 .drawer-head h2 { margin: 0; }
-.drawer-foot { margin-top: auto; position: sticky; bottom: -2rem; padding: 1.2rem 0 2rem; margin-bottom: -2rem; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; }
+.drawer-foot { margin-top: auto; position: sticky; bottom: -2rem; padding: 1.2rem 0 max(2rem, calc(env(safe-area-inset-bottom) + 1rem)); margin-bottom: -2rem; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; }
 .drawer-foot .hint { flex-basis: 100%; margin: 0; }
 button.primary { font-size: 1.3rem; }
 
@@ -406,4 +410,50 @@ tr.you td:first-child { color: var(--amber); }
 @media (max-width: 600px) {
   body { font-size: 14px; }
   .nav { margin-left: 0; }
+}
+
+/* ---------- Phones & tablets ---------- */
+@media (max-width: 720px) {
+  /* One slim row: logo + menu button. The links fold out below it. */
+  .site-header { padding-block: max(.6rem, env(safe-area-inset-top)) .5rem; background: var(--bg); }
+  .site-header .wrap { padding-bottom: .5rem; }
+  .logo { font-size: 1.6rem; }
+  .menu-btn { display: inline-flex; margin-left: auto; font-family: var(--term); font-size: 1.35rem; color: var(--green); padding: .35rem 0 .35rem .6rem; }
+  .nav { display: none; flex-basis: 100%; flex-direction: column; align-items: stretch; gap: 0; margin: 0; font-size: 1.5rem; }
+  .nav.open { display: flex; }
+  .nav a, .nav .whoami, .nav .link-btn { padding: .55rem 0; border-top: 1px dashed var(--line); text-align: left; }
+  .nav .underline { display: none; }
+
+  .hero .actions .btn { flex: 1 1 100%; justify-content: center; }
+  .doc-head .meta { gap: .2rem 1rem; }
+  .owner-bar { padding: .7rem .8rem; }
+  .owner-bar .label { flex-basis: 100%; }
+}
+
+@media (max-width: 380px) {
+  /* Smallest phones (iPhone SE): keep the editor bar on one line */
+  .writer-top { gap: .3rem; }
+  .pill { font-size: .95rem; padding: 0 .4rem; }
+  .writer-top button.primary { padding-inline: .5rem; font-size: 1.15rem; }
+  .writer-bottom > span { font-size: 1rem; }
+}
+
+/* Touch screens: fingers need bigger targets than cursors */
+@media (pointer: coarse) {
+  /* iOS zooms into any field under 16px when it's tapped */
+  input, select, textarea { font-size: max(16px, 1em); }
+  .chip { padding: .3rem .65rem; font-size: .8rem; }
+  a.chip, button.chip { display: inline-flex; align-items: center; min-height: 2.2rem; }
+  .chips { gap: .45rem; }
+  .reader-tools button { min-width: 2.6rem; min-height: 2.4rem; justify-content: center; }
+  .vote { min-height: 2.4rem; padding-inline: .8rem; }
+  .comment-actions .link-btn { padding: .5rem; }
+  .tool { padding: .55rem; }
+  .writer-tools select { padding-block: .45rem; }
+  .pager a, .pager span { padding: .35rem .85rem; }
+  .scale button { padding: .55rem 0; }
+  /* Hover-only flourishes stick after a tap on touch screens */
+  .card:hover::after { animation: none; }
+  /* The writing bar would sit on top of the keyboard */
+  body:has(.writer-body:focus, .writer-page textarea:focus) .writer-bottom { display: none; }
 }

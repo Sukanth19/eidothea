@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import { api } from "@/lib/client-api";
 import { ROLE_LABEL, ROLE_LEVEL, type User } from "@/lib/types";
 import { ScrambleText } from "./ScrambleText";
@@ -10,6 +11,10 @@ import { ScrambleText } from "./ScrambleText";
 export function Nav({ user }: { user: User | null }) {
   const pathname = usePathname();
   const router = useRouter();
+  const [open, setOpen] = useState(false);
+
+  // Phones get a menu button instead of the full row of links; close it after navigating
+  useEffect(() => setOpen(false), [pathname]);
 
   const links = [{ href: "/stories", label: "ARCHIVE" }];
   if (user) {
@@ -35,7 +40,10 @@ export function Nav({ user }: { user: User | null }) {
           <ScrambleText text="EIDOTHEA" />
           <span className="caret" aria-hidden="true" />
         </Link>
-        <nav className="nav" aria-label="Main">
+        <button type="button" className="menu-btn link-btn" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="main-nav">
+          {open ? "[CLOSE]" : "[MENU]"}
+        </button>
+        <nav id="main-nav" className={`nav${open ? " open" : ""}`} aria-label="Main">
           {links.map(l => (
             <Link key={l.href} href={l.href} className={active === l.href ? "active" : ""}>
               {l.label}
