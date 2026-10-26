@@ -7,7 +7,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   if (!/^\d+$/.test(id)) return new Response("Not found", { status: 404 });
   const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host") ?? "localhost:3000";
   const proto = request.headers.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
-  const svg = await QRCode.toString(`${proto}://${host}/stories/${id}?share=1`, {
+  const svg = await QRCode.toString(`${proto}://${host}/stories/${id}?share=1&ref=qr`, {
     type: "svg",
     margin: 2,
     color: { dark: "#0a0b09", light: "#cdd6c4" },

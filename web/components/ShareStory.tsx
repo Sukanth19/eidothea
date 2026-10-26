@@ -74,7 +74,8 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
       .catch(() => setCard({ status: "error" }));
   }, [open, card.status, canShareFiles, cardUrl, fileName]);
 
-  const pageUrl = () => `${window.location.origin}/stories/${storyId}`;
+  // ?ref= tells /insights which share brought a visitor in; the page strips it on arrival
+  const pageUrl = (ref?: string) => `${window.location.origin}/stories/${storyId}${ref ? `?ref=${ref}` : ""}`;
 
   async function shareImage() {
     if (card.status !== "ready") return false;
@@ -101,7 +102,7 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
     // Stories can't carry a link inside the image; the poster adds Instagram's Link sticker.
     // Copy the link now so the sticker is a paste away.
     try {
-      await navigator.clipboard.writeText(pageUrl());
+      await navigator.clipboard.writeText(pageUrl("instagram"));
       setLinkReady(true);
     } catch {}
     if (platform === "android") {
@@ -117,13 +118,13 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
 
   async function shareLink() {
     try {
-      await navigator.share({ title, url: pageUrl() });
+      await navigator.share({ title, url: pageUrl("share") });
     } catch {}
   }
 
   async function copyLink() {
     try {
-      await navigator.clipboard.writeText(pageUrl());
+      await navigator.clipboard.writeText(pageUrl("link"));
       setCopied(true);
       setTimeout(() => setCopied(false), 1800);
     } catch {}
@@ -131,7 +132,7 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
 
   const visit = (url: string) => window.open(url, "_blank", "noopener,noreferrer");
   const text = encodeURIComponent(`${title} — from the Eidothea archive`);
-  const enc = () => encodeURIComponent(pageUrl());
+  const enc = (ref: string) => encodeURIComponent(pageUrl(ref));
 
   const panel = (
     <AnimatePresence>
@@ -207,10 +208,10 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
                 </button>
 
                 <div className="share-sites">
-                  <button type="button" className="chip" onClick={() => visit(`https://wa.me/?text=${text}%20${enc()}`)}>WHATSAPP</button>
-                  <button type="button" className="chip" onClick={() => visit(`https://twitter.com/intent/tweet?text=${text}&url=${enc()}`)}>X</button>
-                  <button type="button" className="chip" onClick={() => visit(`https://www.reddit.com/submit?url=${enc()}&title=${encodeURIComponent(title)}`)}>REDDIT</button>
-                  <button type="button" className="chip" onClick={() => visit(`https://www.facebook.com/sharer/sharer.php?u=${enc()}`)}>FACEBOOK</button>
+                  <button type="button" className="chip" onClick={() => visit(`https://wa.me/?text=${text}%20${enc("whatsapp")}`)}>WHATSAPP</button>
+                  <button type="button" className="chip" onClick={() => visit(`https://twitter.com/intent/tweet?text=${text}&url=${enc("x")}`)}>X</button>
+                  <button type="button" className="chip" onClick={() => visit(`https://www.reddit.com/submit?url=${enc("reddit")}&title=${encodeURIComponent(title)}`)}>REDDIT</button>
+                  <button type="button" className="chip" onClick={() => visit(`https://www.facebook.com/sharer/sharer.php?u=${enc("facebook")}`)}>FACEBOOK</button>
                 </div>
               </div>
             </div>
