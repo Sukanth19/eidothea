@@ -66,7 +66,12 @@ def unfollow(username: str, conn: Conn, user: CurrentUser):
 
 
 def announce_story(conn, story_id: int, author_id: int, tasks: BackgroundTasks) -> None:
-    """A story just went live: tell the author's followers, by email too if they asked for it."""
+    """A story went live for the first time: tell the author's followers, by email too if they asked for it.
+    Going back to drafts and publishing again doesn't announce it twice."""
+    if not conn.execute(
+        "UPDATE stories SET announced_at = datetime('now') WHERE id = ? AND announced_at IS NULL", (story_id,)
+    ).rowcount:
+        return
     followers = conn.execute(
         """SELECT u.id, u.email, u.email_verified_at, u.email_follows FROM follows f JOIN users u ON u.id = f.follower_id
            WHERE f.followee_id = ?""",

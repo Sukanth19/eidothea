@@ -180,7 +180,7 @@ def story_json(row, user, *, body: bool = False) -> dict:
 def fetch_story(conn, story_id: int, user):
     """A story the user may see. Drafts are only visible to their author."""
     row = conn.execute(
-        f"SELECT {STORY_COLUMNS}, s.body FROM {STORY_FROM} WHERE s.id = ?", (story_id,)
+        f"SELECT {STORY_COLUMNS}, s.body, s.announced_at FROM {STORY_FROM} WHERE s.id = ?", (story_id,)
     ).fetchone()
     if not row or (row["status"] == "draft" and (not user or row["author_id"] != user["id"])):
         raise HTTPException(404, "No such story. Maybe there never was.")
@@ -352,9 +352,11 @@ def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser,
     if changes.get("status") == "draft" and existing["author_id"] != user["id"]:
         raise HTTPException(403, "Only the author can take a story back to drafts.")
     status = changes.get("status", existing["status"])
+    # Only a story's first time live is new; one taken back to drafts returns as it was
+    debut = existing["status"] == "draft" and status == "published" and not existing["announced_at"]
     if status == "published":
         check_publishable(changes.get("title", existing["title"]), changes.get("body", existing["body"]))
-        if existing["status"] == "draft":
+        if debut:
             guard.check_daily_cap(conn, user, "stories")
     if "body" in changes:
         changes["reading_minutes"] = reading_minutes(changes["body"])
@@ -372,13 +374,9 @@ def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser,
 
     assignments = ", ".join(f"{k} = ?" for k in changes)
     # A draft going live is new: it gets today's date and no "edited" mark
-    stamp = (
-        "published_at = datetime('now'), updated_at = NULL"
-        if existing["status"] == "draft" and status == "published"
-        else "updated_at = datetime('now')"
-    )
+    stamp = "published_at = datetime('now'), updated_at = NULL" if debut else "updated_at = datetime('now')"
     conn.execute(f"UPDATE stories SET {assignments}, {stamp} WHERE id = ?", [*changes.values(), story_id])
-    if existing["status"] == "draft" and status == "published" and existing["author_id"]:
+    if debut and existing["author_id"]:
         social.announce_story(conn, story_id, existing["author_id"], tasks)
     conn.commit()
     return story_json(fetch_story(conn, story_id, user), user, body=True)

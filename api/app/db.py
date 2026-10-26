@@ -205,6 +205,7 @@ MIGRATIONS = {
     "stories": {
         "subtitle": "TEXT NOT NULL DEFAULT ''",
         "status": "TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published'))",
+        "announced_at": "TEXT",  # first went live; set once, so republishing doesn't count as new
     },
 }
 
@@ -244,6 +245,8 @@ def init() -> None:
         if ("users", "member") in added:
             # Everyone who joined before membership existed keeps what they could do
             conn.execute("UPDATE users SET member = 1, member_since = created_at, member_via = 'grandfathered'")
+        if ("stories", "announced_at") in added:
+            conn.execute("UPDATE stories SET announced_at = published_at WHERE status = 'published'")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users(email COLLATE NOCASE) WHERE email IS NOT NULL")
         conn.execute("CREATE INDEX IF NOT EXISTS stories_status ON stories(status)")
         # Only into an empty table, so a genre a mod removed stays removed
