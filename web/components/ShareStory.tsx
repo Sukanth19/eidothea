@@ -6,33 +6,54 @@ import { createPortal } from "react-dom";
 import { Icon } from "./Icon";
 
 type CardState = { status: "idle" | "loading" | "error" } | { status: "ready"; file: File };
+type Platform = "android" | "ios" | "desktop";
+
+// Instagram doesn't let websites open its story editor with an image (only native apps
+// registered with Meta can), and its share-sheet entry usually only sends a message.
+// So the Instagram route is: save the card, then jump into Instagram's story camera,
+// where the card is the newest photo in the gallery.
+const INSTAGRAM_WEB = "https://www.instagram.com/";
+const INSTAGRAM_ANDROID = `intent://story-camera#Intent;scheme=instagram;package=com.instagram.android;S.browser_fallback_url=${encodeURIComponent(INSTAGRAM_WEB)};end`;
+const INSTAGRAM_IOS = "instagram://story-camera";
+
+function detectPlatform(): Platform {
+  const ua = navigator.userAgent;
+  if (/Android/i.test(ua)) return "android";
+  // iPadOS reports itself as a Mac; touch support gives it away
+  if (/iPhone|iPad|iPod/i.test(ua) || (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1)) return "ios";
+  return "desktop";
+}
 
 /**
- * Share button and panel. The panel starts downloading the story card as it opens, so
- * "Share image" can hand the file straight to the phone's share sheet: Safari only allows
- * navigator.share right after a tap, not after a download finishes. From the share sheet,
- * Instagram/Snapchat open their story editor with the card, and the person decides whether to post.
+ * Share button and panel. The card is fetched as the panel opens, so buttons that hand it
+ * to the share sheet can call navigator.share straight away: Safari only allows that right
+ * after a tap, not after a download finishes.
  */
 export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, heading }: { storyId: number; title: string; label?: string; autoOpen?: boolean; heading?: string }) {
   const [open, setOpen] = useState(autoOpen);
   const [card, setCard] = useState<CardState>({ status: "idle" });
+  const [platform, setPlatform] = useState<Platform>("desktop");
   const [canShareFiles, setCanShareFiles] = useState(false);
   const [canShareLinks, setCanShareLinks] = useState(false);
+  const [saved, setSaved] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
   const cardUrl = `/stories/${storyId}/card`;
+  const fileName = `eidothea-${storyId}.png`;
+  const phone = platform !== "desktop";
 
   useEffect(() => {
     setMounted(true);
-    // Opened by ?published=1 after publishing; drop it so a reload doesn't pop the panel again
+    setPlatform(detectPlatform());
+    // Opened by ?published=1 or ?share=1; drop it so a reload doesn't pop the panel again
     if (autoOpen) window.history.replaceState(null, "", window.location.pathname);
     setCanShareLinks(typeof navigator.share === "function");
     try {
       const probe = new File([""], "probe.png", { type: "image/png" });
       setCanShareFiles(!!navigator.canShare?.({ files: [probe] }));
     } catch {}
-  }, []);
+  }, [autoOpen]);
 
   useEffect(() => {
     if (!open) return;
@@ -48,18 +69,43 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
     setCard({ status: "loading" });
     fetch(cardUrl)
       .then(r => (r.ok ? r.blob() : Promise.reject(new Error(String(r.status)))))
-      .then(blob => setCard({ status: "ready", file: new File([blob], `eidothea-${storyId}.png`, { type: "image/png" }) }))
+      .then(blob => setCard({ status: "ready", file: new File([blob], fileName, { type: "image/png" }) }))
       .catch(() => setCard({ status: "error" }));
-  }, [open, card.status, canShareFiles, cardUrl, storyId]);
+  }, [open, card.status, canShareFiles, cardUrl, fileName]);
 
   const pageUrl = () => `${window.location.origin}/stories/${storyId}`;
 
   async function shareImage() {
-    if (card.status !== "ready") return;
+    if (card.status !== "ready") return false;
     try {
-      // The image alone: some apps (Instagram among them) drop files that come with text or a URL
+      // The image alone: some apps drop files that come with text or a URL
       await navigator.share({ files: [card.file] });
-    } catch {} // closing the share sheet rejects too; nothing to report
+      return true;
+    } catch {
+      return false; // closing the share sheet rejects too; nothing to report
+    }
+  }
+
+  /** iPhone: through the share sheet's "Save Image", which puts it in Photos. Elsewhere: a download. */
+  async function saveCard(e: React.MouseEvent<HTMLAnchorElement>) {
+    if (platform === "ios" && card.status === "ready") {
+      e.preventDefault();
+      if (await shareImage()) setSaved(true);
+    } else {
+      setSaved(true);
+    }
+  }
+
+  function openInstagram() {
+    if (platform === "android") {
+      window.location.href = INSTAGRAM_ANDROID;
+      return;
+    }
+    window.location.href = INSTAGRAM_IOS;
+    // Still here a moment later? The app isn't installed: go to the website instead
+    setTimeout(() => {
+      if (document.visibilityState === "visible") window.location.href = INSTAGRAM_WEB;
+    }, 1500);
   }
 
   async function shareLink() {
@@ -104,24 +150,43 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
               <img className="share-preview" src={cardUrl} alt={`Story card for “${title}”`} width={1080} height={1920} />
 
               <div className="share-actions">
-                {canShareFiles ? (
-                  <>
-                    <button type="button" className="primary" onClick={shareImage} disabled={card.status !== "ready"}>
-                      <Icon name="share" size={16} /> {card.status === "loading" ? "PREPARING CARD…" : "SHARE TO STORY"}
-                    </button>
-                    <p className="hint">
-                      Opens your phone&apos;s share menu. Pick <b>Instagram</b> (then <b>Story</b>), Snapchat or WhatsApp. The card opens in
-                      their editor, and nothing is posted unless you post it. Add a link sticker so people can find it.
-                    </p>
-                    {card.status === "error" && <p className="msg error">✕ The card didn&apos;t load. Try downloading it instead.</p>}
-                  </>
-                ) : (
-                  <p className="hint">On your phone, this button sends the card straight to Instagram or Snapchat stories. Here you can download it and post it from your phone.</p>
-                )}
+                <section className="share-ig" aria-label="Post to your Instagram story">
+                  <h3>Instagram story</h3>
+                  {phone ? (
+                    <>
+                      <a className={`btn${saved ? " ghost" : ""}`} href={cardUrl} download={fileName} onClick={saveCard}>
+                        <span className="step">1</span> {saved ? "CARD SAVED ✓" : "SAVE CARD"}
+                      </a>
+                      <button type="button" className={saved ? "" : "ghost"} onClick={openInstagram}>
+                        <span className="step">2</span> OPEN INSTAGRAM
+                      </button>
+                      <p className="hint">
+                        Instagram opens on the story camera. Tap the gallery: the card is your newest photo. Post it or don&apos;t, it&apos;s up to you.
+                        {platform === "ios" && " To save, pick “Save Image” in the menu that pops up."}
+                      </p>
+                    </>
+                  ) : (
+                    <div className="share-qr">
+                      <img src={`/stories/${storyId}/qr`} alt="QR code that opens this story on your phone" width={132} height={132} />
+                      <p className="hint">
+                        Instagram stories can only be posted from the phone app. <b>Scan this with your phone</b>: the story opens with this panel ready,
+                        or <a href={cardUrl} download={fileName}>download the card</a> and send it to yourself.
+                      </p>
+                    </div>
+                  )}
+                  {card.status === "error" && <p className="msg error">✕ The card didn&apos;t load. Try again in a moment.</p>}
+                </section>
 
-                <a className="btn ghost" href={cardUrl} download={`eidothea-${storyId}.png`}>
-                  <Icon name="download" size={16} /> DOWNLOAD CARD
-                </a>
+                {phone && canShareFiles && (
+                  <button type="button" className="ghost" onClick={shareImage} disabled={card.status !== "ready"}>
+                    <Icon name="share" size={16} /> {card.status === "loading" ? "PREPARING CARD…" : "SEND CARD TO OTHER APPS"}
+                  </button>
+                )}
+                {!phone && (
+                  <a className="btn ghost" href={cardUrl} download={fileName}>
+                    <Icon name="download" size={16} /> DOWNLOAD CARD
+                  </a>
+                )}
                 {canShareLinks && (
                   <button type="button" className="ghost" onClick={shareLink}><Icon name="share" size={16} /> SHARE LINK</button>
                 )}

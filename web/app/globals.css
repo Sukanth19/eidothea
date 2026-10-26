@@ -327,6 +327,12 @@ a.chip.on:hover { color: var(--bg); }
 .share-actions > .btn, .share-actions > button { justify-content: center; }
 .share-actions .hint { margin: 0; }
 .share-actions .hint b { color: var(--text); font-weight: 400; }
+.share-ig { display: flex; flex-direction: column; gap: .6rem; padding: .9rem 1rem 1rem; border: 1px solid var(--line); border-left: 3px solid var(--amber); background: var(--panel-2); }
+.share-ig h3 { font-size: 1.05rem; }
+.share-ig .btn, .share-ig button { justify-content: center; }
+.share-ig .step { display: inline-grid; place-items: center; width: 1.4em; height: 1.4em; border: 1px solid currentColor; border-radius: 50%; font-size: .85em; line-height: 1; }
+.share-qr { display: flex; gap: 1rem; align-items: center; }
+.share-qr img { flex: none; width: 132px; height: 132px; image-rendering: pixelated; }
 .share-sites { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .3rem; }
 .share-sites .chip { font-family: var(--term); font-size: 1.05rem; letter-spacing: .06em; padding: .15rem .7rem; }
 

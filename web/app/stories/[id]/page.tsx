@@ -12,7 +12,7 @@ import { excerpt, formatDate } from "@/lib/format";
 import { apiGet, currentUser } from "@/lib/server-api";
 import type { Comment, Story } from "@/lib/types";
 
-type Props = { params: Promise<{ id: string }>; searchParams?: Promise<{ published?: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams?: Promise<{ published?: string; share?: string }> };
 
 async function load(id: string) {
   if (!/^\d+$/.test(id)) return null;
@@ -33,7 +33,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function StoryPage({ params, searchParams }: Props) {
   const [story, user] = await Promise.all([load((await params).id), currentUser()]);
-  const justPublished = (await searchParams)?.published === "1";
+  const query = await searchParams;
+  const justPublished = query?.published === "1";
   if (!story) notFound();
 
   const ownStory = !!user && story.author_id === user.id;
@@ -77,7 +78,12 @@ export default async function StoryPage({ params, searchParams }: Props) {
         </div>
         {!draft && (
           <div className="head-share">
-            <ShareStory storyId={story.id} title={story.title} autoOpen={justPublished && ownStory} heading={justPublished && ownStory ? "Your story is live. Share it." : undefined} />
+            <ShareStory
+              storyId={story.id}
+              title={story.title}
+              autoOpen={(justPublished && ownStory) || query?.share === "1"}
+              heading={justPublished && ownStory ? "Your story is live. Share it." : undefined}
+            />
           </div>
         )}
         <div className="chips">
