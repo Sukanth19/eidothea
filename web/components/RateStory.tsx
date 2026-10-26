@@ -27,7 +27,7 @@ export function RateStory({ storyId, initial, blocked }: { storyId: number; init
   return (
     <section className="rate-box" aria-label="Rating">
       <div className="rate-head">
-        <span className="term">RATE THIS FILE</span>
+        <span className="caps">RATE THIS FILE</span>
         <span className="muted">
           {state.rating != null ? (
             <><b className="score">{state.rating.toFixed(1)}</b> / 10 · {state.rating_count} {state.rating_count === 1 ? "rating" : "ratings"}</>

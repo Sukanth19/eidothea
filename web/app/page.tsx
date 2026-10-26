@@ -22,7 +22,7 @@ export default async function Home() {
         <div className="stats">
           <div className="stat"><div className="n"><CountUp to={stats.stories} /></div><div className="l">Stories on file</div></div>
           <div className="stat"><div className="n"><CountUp to={stats.community} /></div><div className="l">Written by members</div></div>
-          <div className="stat"><div className="n"><CountUp to={stats.users} /></div><div className="l">Operators</div></div>
+          <div className="stat"><div className="n"><CountUp to={stats.users} /></div><div className="l">Souls registered</div></div>
           <div className="stat"><div className="n"><CountUp to={Math.round(stats.minutes / 60)} /></div><div className="l">Hours of reading</div></div>
         </div>
       )}
@@ -31,7 +31,7 @@ export default async function Home() {
         <>
           <div className="section-head">
             <h2>Fresh from the community</h2>
-            <Link href="/stories?source=user" className="term">ALL COMMUNITY STORIES &gt;</Link>
+            <Link href="/stories?source=user" className="caps">ALL COMMUNITY STORIES →</Link>
           </div>
           <StoryGrid stories={fresh.items} />
         </>
@@ -39,7 +39,7 @@ export default async function Home() {
 
       <div className="section-head">
         <h2>Highest rated</h2>
-        <Link href="/stories?sort=rating" className="term">SEE MORE &gt;</Link>
+        <Link href="/stories?sort=rating" className="caps">SEE MORE →</Link>
       </div>
       <StoryGrid stories={top?.items ?? []} />
 

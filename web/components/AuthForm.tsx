@@ -44,11 +44,11 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
   const isLogin = mode === "login";
 
   return (
-    <div className="terminal">
-      <div className="boot">
-        EIDOTHEA · TERMINAL 7<br />
-        LINK ESTABLISHED .......... OK<br />
-        {isLogin ? "IDENTIFY YOURSELF." : "NEW OPERATOR ENROLMENT."}
+    <div className="ledger">
+      <div className="preface">
+        THE EIDOTHEA ARCHIVE<br />
+        A CANDLE IS LIT. THE DOOR IS UNLOCKED.<br />
+        {isLogin ? "STATE YOUR NAME." : "WRITE YOUR NAME IN THE REGISTER."}
       </div>
       <form onSubmit={submit}>
         <div className="field">
@@ -82,7 +82,7 @@ export function AuthForm({ mode }: { mode: "login" | "register" }) {
           )}
         </AnimatePresence>
         <div className="actions">
-          <button type="submit" disabled={busy}>{busy ? "CONNECTING…" : isLogin ? "AUTHENTICATE" : "ENROL"}</button>
+          <button type="submit" disabled={busy}>{busy ? "THE DOOR CREAKS…" : isLogin ? "ENTER" : "SIGN THE REGISTER"}</button>
           {isLogin ? (
             <Link href={`/register${params.get("next") ? `?next=${encodeURIComponent(next)}` : ""}`} className="muted">no account? join</Link>
           ) : (

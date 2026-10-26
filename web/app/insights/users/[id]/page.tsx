@@ -30,9 +30,9 @@ export default async function InsightUserPage({ params }: { params: Promise<{ id
 
   return (
     <>
-      <p><Link href="/insights">&lt; insights</Link></p>
+      <p><Link href="/insights">← insights</Link></p>
       <header className="profile-head">
-        <div className="term muted">MEMBER FILE #{String(u.id).padStart(4, "0")}</div>
+        <div className="caps muted">MEMBER FILE #{String(u.id).padStart(4, "0")}</div>
         <h1 className="flicker">{u.username}</h1>
         <div className="meta">
           {u.display_name && <span>{u.display_name}</span>}

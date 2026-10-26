@@ -22,7 +22,7 @@ export default async function PublicProfile({ params }: Props) {
   return (
     <>
       <header className="profile-head">
-        <div className="term muted">OPERATOR FILE</div>
+        <div className="caps muted">READER ON RECORD</div>
         <h1 className="flicker">{profile.display_name || profile.username}</h1>
         <div className="meta">
           <span>@{profile.username}</span>

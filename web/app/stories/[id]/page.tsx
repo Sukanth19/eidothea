@@ -43,7 +43,7 @@ export default async function StoryPage({ params, searchParams }: Props) {
 
   return (
     <article className="doc">
-      <p><Link href="/stories">&lt; back to archive</Link></p>
+      <p><Link href="/stories">← back to archive</Link></p>
 
       {draft && (
         <div className="owner-bar draft">
@@ -61,7 +61,7 @@ export default async function StoryPage({ params, searchParams }: Props) {
       )}
 
       <header className="doc-head">
-        <div className="term muted" style={{ fontSize: "1.2rem" }}>
+        <div className="caps muted" style={{ fontSize: ".95rem" }}>
           FILE #{String(story.id).padStart(4, "0")} ·{" "}
           <span className={`badge ${story.source}`}>{story.source === "user" ? "COMMUNITY" : "CLASSIC ARCHIVE"}</span>
         </div>
@@ -104,12 +104,12 @@ export default async function StoryPage({ params, searchParams }: Props) {
 
       {story.truncated && (
         <p className="notice">
-          ⚠ THIS TRANSMISSION WAS CUT OFF. The source dataset stored each story in a single spreadsheet cell,
+          ⚠ THE REST OF THIS PAGE WAS TORN AWAY. The source dataset stored each story in a single spreadsheet cell,
           and this one ran past the 32,767-character limit. The rest is lost.
         </p>
       )}
 
-      <div className="end-mark">— END OF FILE —</div>
+      <div className="end-mark">— NOTHING MORE WAS FOUND —</div>
 
       {story.tags.length > 0 && (
         <div className="chips" style={{ justifyContent: "center" }}>

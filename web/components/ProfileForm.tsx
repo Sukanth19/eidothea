@@ -26,7 +26,7 @@ export function ProfileForm({ initial }: { initial: Profile }) {
   const set = (k: keyof Profile) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setP({ ...p, [k]: e.target.value });
 
   return (
-    <form className="terminal profile-form" onSubmit={save}>
+    <form className="ledger profile-form" onSubmit={save}>
       <div className="field">
         <label htmlFor="dn">Display name</label>
         <input id="dn" value={p.display_name} onChange={set("display_name")} maxLength={40} placeholder={p.username} />
@@ -51,7 +51,7 @@ export function ProfileForm({ initial }: { initial: Profile }) {
       {msg && <p className={`msg ${msg.ok ? "ok" : "error"}`} role="status">{msg.ok ? "✓" : "✕"} {msg.text}</p>}
       <div className="actions">
         <button type="submit" disabled={saving}>{saving ? "SAVING…" : "SAVE PROFILE"}</button>
-        {p.profile_public && <Link href={`/u/${p.username}`}>view public profile &gt;</Link>}
+        {p.profile_public && <Link href={`/u/${p.username}`}>view public profile →</Link>}
       </div>
     </form>
   );

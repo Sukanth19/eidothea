@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Mono, Special_Elite, VT323 } from "next/font/google";
+import { EB_Garamond, IM_Fell_English_SC, Special_Elite } from "next/font/google";
 import { headers } from "next/headers";
 import { Atmosphere, FxToggle } from "@/components/Atmosphere";
 import { Nav } from "@/components/Nav";
@@ -9,9 +9,9 @@ import { currentUser } from "@/lib/server-api";
 import "./globals.css";
 import "./effects.css";
 
-const plex = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "600"], style: ["normal", "italic"], variable: "--font-plex" });
+const garamond = EB_Garamond({ subsets: ["latin"], weight: ["400", "600"], style: ["normal", "italic"], variable: "--font-garamond" });
 const elite = Special_Elite({ subsets: ["latin"], weight: "400", variable: "--font-elite" });
-const vt = VT323({ subsets: ["latin"], weight: "400", variable: "--font-vt" });
+const fell = IM_Fell_English_SC({ subsets: ["latin"], weight: "400", variable: "--font-fell" });
 
 export async function generateMetadata(): Promise<Metadata> {
   // Link previews need absolute image URLs; build them from the address the visitor used
@@ -32,13 +32,13 @@ export const viewport: Viewport = {
   initialScale: 1,
   // Draw under the iPhone notch and home bar; the CSS pads with safe-area insets
   viewportFit: "cover",
-  themeColor: "#0a0b09",
+  themeColor: "#0c0a0b",
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const user = await currentUser();
   return (
-    <html lang="en" className={`${plex.variable} ${elite.variable} ${vt.variable}`} data-fx="on">
+    <html lang="en" className={`${garamond.variable} ${elite.variable} ${fell.variable}`} data-fx="on">
       <body>
         <Atmosphere>
           <Tracker />
@@ -46,7 +46,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           <main className="view wrap">{children}</main>
           <footer className="site-footer">
             <div className="wrap">
-              <span>TERMINAL 7 // STORIES FROM THE DAVIDGETTER1/CREEPYPASTAS DATASET + THE COMMUNITY</span>
+              <span>THE EIDOTHEA ARCHIVE · STORIES FROM THE DAVIDGETTER1/CREEPYPASTAS DATASET & THE COMMUNITY</span>
               <span className="footer-links">
                 <Link href="/privacy">PRIVACY</Link>
                 <FxToggle />
