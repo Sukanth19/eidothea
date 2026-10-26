@@ -4,6 +4,7 @@ import { motion } from "motion/react";
 import Link from "next/link";
 import { excerpt, formatDate } from "@/lib/format";
 import type { StorySummary } from "@/lib/types";
+import { DeleteStoryButton } from "./DeleteStoryButton";
 
 export function Rating({ value }: { value: number | null }) {
   if (value == null) return null;
@@ -15,7 +16,8 @@ export function Rating({ value }: { value: number | null }) {
   );
 }
 
-export function StoryGrid({ stories }: { stories: StorySummary[] }) {
+/** With `deleteDrafts` (your own drafts list), each draft gets a delete button under its card. */
+export function StoryGrid({ stories, deleteDrafts }: { stories: StorySummary[]; deleteDrafts?: string }) {
   if (!stories.length) return <p className="empty">NOTHING HERE. OR NOTHING THAT WANTS TO BE FOUND.</p>;
   return (
     // Keyed on the result set so the staggered entrance replays when filters change
@@ -29,6 +31,11 @@ export function StoryGrid({ stories }: { stories: StorySummary[] }) {
           transition={{ type: "spring", stiffness: 400, damping: 28 }}
         >
           <StoryCard story={s} />
+          {deleteDrafts && s.status === "draft" && s.can_edit && (
+            <div className="draft-delete">
+              <DeleteStoryButton id={s.id} redirectTo={deleteDrafts} />
+            </div>
+          )}
         </motion.div>
       ))}
     </div>

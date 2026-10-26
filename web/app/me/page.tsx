@@ -41,7 +41,7 @@ export default async function MyStoriesPage({ searchParams }: { searchParams: Pr
       {data && data.total > 0 ? (
         <>
           <div className="result-count">{data.total} {drafts ? (data.total === 1 ? "DRAFT" : "DRAFTS") : "STORIES"}</div>
-          <StoryGrid stories={data.items} />
+          <StoryGrid stories={data.items} deleteDrafts={drafts ? "/me?tab=drafts" : undefined} />
           <Pagination page={data.page} pages={data.pages} params={{ ...(page ? { page } : {}), ...(drafts ? { tab: "drafts" } : {}) }} />
         </>
       ) : drafts ? (

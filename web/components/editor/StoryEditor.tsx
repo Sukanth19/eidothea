@@ -408,7 +408,7 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
                         {status === "published" && isAuthor && (
                           <button type="button" className="ghost" onClick={unpublish}>BACK TO DRAFTS</button>
                         )}
-                        {idRef.current && <DeleteStoryButton id={idRef.current} redirectTo="/me" />}
+                        {idRef.current && <DeleteStoryButton id={idRef.current} redirectTo={status === "draft" ? "/me?tab=drafts" : "/me"} />}
                       </div>
                     )}
                   </motion.aside>

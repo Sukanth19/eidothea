@@ -248,6 +248,7 @@ a.chip.on:hover { color: var(--bg); }
 .badge.import { color: var(--amber); }
 .badge.draft { color: var(--muted); }
 .card.draft { border-left-color: var(--muted); border-left-style: dashed; }
+.draft-delete { margin-top: .5rem; }
 
 /* ---------- Toolbar / pagination ---------- */
 .chips.quick { margin-top: 1.2rem; }
