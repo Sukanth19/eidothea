@@ -28,15 +28,17 @@ CREATE TABLE IF NOT EXISTS sessions (
 CREATE TABLE IF NOT EXISTS stories (
     id              INTEGER PRIMARY KEY,
     title           TEXT NOT NULL,
-    body            TEXT NOT NULL,
+    subtitle        TEXT NOT NULL DEFAULT '',
+    body            TEXT NOT NULL,  -- light markup, see web/lib/markup.ts
     author_id       INTEGER REFERENCES users(id) ON DELETE CASCADE,
     author_name     TEXT,
     tags            TEXT NOT NULL DEFAULT '[]',  -- JSON array
     categories      TEXT NOT NULL DEFAULT '[]',  -- JSON array
-    rating          REAL,
+    rating          REAL,  -- from the source dataset; readers' scores live in story_ratings
     reading_minutes INTEGER NOT NULL,
     source          TEXT NOT NULL DEFAULT 'user' CHECK (source IN ('user', 'import')),
     truncated       INTEGER NOT NULL DEFAULT 0,
+    status          TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published')),
     published_at    TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at      TEXT
 );
@@ -44,7 +46,41 @@ CREATE TABLE IF NOT EXISTS stories (
 CREATE INDEX IF NOT EXISTS stories_author ON stories(author_id);
 CREATE INDEX IF NOT EXISTS stories_published ON stories(published_at);
 CREATE INDEX IF NOT EXISTS stories_rating ON stories(rating);
+
+CREATE TABLE IF NOT EXISTS story_ratings (
+    story_id   INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    score      INTEGER NOT NULL CHECK (score BETWEEN 1 AND 10),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (story_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS comments (
+    id         INTEGER PRIMARY KEY,
+    story_id   INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body       TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS comments_story ON comments(story_id);
+
+CREATE TABLE IF NOT EXISTS comment_votes (
+    comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    value      INTEGER NOT NULL CHECK (value IN (-1, 1)),
+    PRIMARY KEY (comment_id, user_id)
+);
 """
+
+# Columns added after the first release. CREATE TABLE IF NOT EXISTS won't add them
+# to an existing database, so they're added here when missing.
+MIGRATIONS = {
+    "stories": {
+        "subtitle": "TEXT NOT NULL DEFAULT ''",
+        "status": "TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published'))",
+    },
+}
 
 
 def connect() -> sqlite3.Connection:
@@ -60,6 +96,12 @@ def connect() -> sqlite3.Connection:
 def init() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
+        for table, columns in MIGRATIONS.items():
+            have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
+            for name, decl in columns.items():
+                if name not in have:
+                    conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+        conn.execute("CREATE INDEX IF NOT EXISTS stories_status ON stories(status)")
 
 
 def get_db():
