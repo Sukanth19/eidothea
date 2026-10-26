@@ -41,7 +41,7 @@ function useAutoHeight(value: string) {
  * The writing screen. Drafts save themselves a moment after you stop typing;
  * published stories only change when you press Update, so readers never see half an edit.
  */
-export function StoryEditor({ story, categories, user }: { story?: Story; categories: string[]; user: User }) {
+export function StoryEditor({ story, genres = [], categories, user }: { story?: Story; genres?: string[]; categories: string[]; user: User }) {
   const router = useRouter();
   const [status, setStatus] = useState<Status>(story?.status ?? "draft");
   const [title, setTitle] = useState(story?.title ?? "");
@@ -374,14 +374,16 @@ export function StoryEditor({ story, categories, user }: { story?: Story; catego
                     </div>
 
                     <div className="field">
-                      <label>Categories ({picked.length}/{MAX_CATEGORIES})</label>
-                      <div className="chips" style={{ marginTop: ".5rem" }}>
-                        {categories.map(c => (
-                          <button type="button" key={c} className={`chip${picked.includes(c) ? " on" : ""}`} onClick={() => toggleCategory(c)} aria-pressed={picked.includes(c)}>
-                            {c}
-                          </button>
-                        ))}
-                      </div>
+                      <label>Genres ({picked.length}/{MAX_CATEGORIES})</label>
+                      {[genres, categories.filter(c => !genres.includes(c))].map((group, i) => group.length > 0 && (
+                        <div key={i} className="chips" style={{ marginTop: ".5rem", paddingBottom: i === 0 ? ".5rem" : 0, borderBottom: i === 0 ? "1px dashed var(--line)" : 0 }}>
+                          {group.map(c => (
+                            <button type="button" key={c} className={`chip${picked.includes(c) ? " on" : ""}`} onClick={() => toggleCategory(c)} aria-pressed={picked.includes(c)}>
+                              {c}
+                            </button>
+                          ))}
+                        </div>
+                      ))}
                     </div>
 
                     <div className="field">

@@ -10,7 +10,7 @@ from fastapi import BackgroundTasks, Cookie, Depends, FastAPI, HTTPException, Qu
 from pydantic import BaseModel, Field, field_validator
 
 from . import db, insights
-from .deps import Conn, CurrentUser, OptionalUser
+from .deps import Conn, CurrentUser, ModUser, OptionalUser
 from .gaming import with_gaming_category
 from .security import (
     ROLE_LEVEL,
@@ -131,6 +131,16 @@ class VoteIn(BaseModel):
 
 class RoleIn(BaseModel):
     role: Literal["user", "mod", "admin"]
+
+
+class GenreIn(BaseModel):
+    name: str = Field(min_length=2, max_length=60)
+    blurb: str = Field(default="", max_length=200)
+
+    @field_validator("name", "blurb")
+    @classmethod
+    def tidy(cls, v: str) -> str:
+        return " ".join(v.split())
 
 
 # --------------------------------------------------------------------------- helpers
@@ -532,6 +542,35 @@ def categories(conn: Conn):
            GROUP BY j.value ORDER BY count DESC, name"""
     ).fetchall()
     return [dict(r) for r in rows]
+
+
+@app.get("/api/genres")
+def list_genres(conn: Conn):
+    rows = conn.execute(
+        """SELECT g.name, g.blurb,
+                  (SELECT COUNT(*) FROM stories s, json_each(s.categories) j
+                   WHERE s.status = 'published' AND j.value = g.name) AS count
+           FROM genres g ORDER BY g.created_at, g.name"""
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
+@app.post("/api/genres", status_code=201)
+def add_genre(body: GenreIn, conn: Conn, user: ModUser):
+    try:
+        conn.execute("INSERT INTO genres (name, blurb, created_by) VALUES (?, ?, ?)", (body.name, body.blurb, user["id"]))
+    except sqlite3.IntegrityError:
+        raise HTTPException(409, "That genre already exists.")
+    conn.commit()
+    return list_genres(conn)
+
+
+@app.delete("/api/genres/{name}")
+def remove_genre(name: str, conn: Conn, _user: ModUser):
+    # Stories keep the genre; it just stops being offered to writers
+    conn.execute("DELETE FROM genres WHERE name = ?", (name,))
+    conn.commit()
+    return list_genres(conn)
 
 
 @app.get("/api/stats")

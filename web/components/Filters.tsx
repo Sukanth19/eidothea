@@ -7,6 +7,8 @@ import type { Category } from "@/lib/types";
 // One-click shortcuts shown above the toolbar; video games first, as asked
 const QUICK = [
   { label: "VIDEO GAMES", category: "Video Games and Gaming" },
+  { label: "ORIGINAL CRYPTIDS", category: "Original Cryptids" },
+  { label: "ANOMALY FILES", category: "Anomaly Files" },
   { label: "CRYPTIDS", category: "Monsters, Creatures, and Cryptids" },
   { label: "GHOSTS", category: "Ghosts and Spirits" },
   { label: "ENTITIES", category: "Beings and Entities" },
@@ -62,7 +64,7 @@ export function Filters({ categories }: { categories: Category[] }) {
           type="search"
           value={q}
           onChange={e => setQ(e.target.value)}
-          placeholder="> search title, tag or author"
+          placeholder="search title, tag or author"
           aria-label="Search stories"
         />
         <select value={params.get("category") ?? ""} onChange={e => update({ category: e.target.value })} aria-label="Category">

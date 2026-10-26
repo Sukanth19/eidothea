@@ -7,7 +7,7 @@ from typing import Annotated
 from fastapi import Cookie, Depends, HTTPException
 
 from . import db
-from .security import user_for_token
+from .security import ROLE_LEVEL, level, user_for_token
 
 Conn = Annotated[sqlite3.Connection, Depends(db.get_db)]
 
@@ -36,5 +36,12 @@ def require_user(user=Depends(optional_user)):
     return user
 
 
+def require_mod(user=Depends(require_user)):
+    if level(user) < ROLE_LEVEL["mod"]:
+        raise HTTPException(403, "Moderators only.")
+    return user
+
+
 OptionalUser = Annotated[sqlite3.Row | None, Depends(optional_user)]
 CurrentUser = Annotated[sqlite3.Row, Depends(require_user)]
+ModUser = Annotated[sqlite3.Row, Depends(require_mod)]

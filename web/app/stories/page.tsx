@@ -4,7 +4,7 @@ import { Filters } from "@/components/Filters";
 import { Pagination } from "@/components/Pagination";
 import { StoryGrid } from "@/components/StoryCard";
 import { apiGet, query } from "@/lib/server-api";
-import type { Category, StoryPage } from "@/lib/types";
+import type { Category, Genre, StoryPage } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Archive" };
 
@@ -18,10 +18,14 @@ export default async function StoriesPage({ searchParams }: { searchParams: Prom
     if (typeof v === "string" && v) params[k] = v;
   }
 
-  const [data, categories] = await Promise.all([
+  const [data, categories, genres] = await Promise.all([
     apiGet<StoryPage>(`/api/stories${query(params)}`),
     apiGet<Category[]>("/api/categories"),
+    apiGet<Genre[]>("/api/genres"),
   ]);
+  // New genres are offered even before anyone has written in them
+  const seen = new Set((categories ?? []).map(c => c.name));
+  const all = [...(categories ?? []), ...(genres ?? []).filter(g => !seen.has(g.name)).map(({ name, count }) => ({ name, count }))];
 
   return (
     <>
@@ -30,7 +34,7 @@ export default async function StoriesPage({ searchParams }: { searchParams: Prom
         Recovered accounts from across the internet, and new ones from people who should probably have stayed quiet.
       </p>
       <Suspense>
-        <Filters categories={categories ?? []} />
+        <Filters categories={all} />
       </Suspense>
       {data ? (
         <>

@@ -81,6 +81,11 @@ export interface Category {
   count: number;
 }
 
+/** A genre writers can pick, on top of the dataset's categories */
+export interface Genre extends Category {
+  blurb: string;
+}
+
 export interface Stats {
   stories: number;
   community: number;

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { StoryEditor } from "@/components/editor/StoryEditor";
 import { apiGet, currentUser } from "@/lib/server-api";
-import type { Category, Story } from "@/lib/types";
+import type { Category, Genre, Story } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Edit story" };
 
@@ -12,9 +12,10 @@ export default async function EditStoryPage({ params }: { params: Promise<{ id: 
   const user = await currentUser();
   if (!user) redirect(`/login?next=/stories/${id}/edit`);
 
-  const [story, categories] = await Promise.all([
+  const [story, categories, genres] = await Promise.all([
     /^\d+$/.test(id) ? apiGet<Story>(`/api/stories/${id}`) : null,
     apiGet<Category[]>("/api/categories"),
+    apiGet<Genre[]>("/api/genres"),
   ]);
   if (!story) notFound();
 
@@ -31,5 +32,5 @@ export default async function EditStoryPage({ params }: { params: Promise<{ id: 
   // Keep any categories on the story even if they're rare
   const names = new Set([...(categories ?? []).map(c => c.name), ...story.categories]);
 
-  return <StoryEditor story={story} categories={[...names]} user={user} />;
+  return <StoryEditor story={story} genres={(genres ?? []).map(g => g.name)} categories={[...names]} user={user} />;
 }

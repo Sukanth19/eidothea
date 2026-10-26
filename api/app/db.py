@@ -84,6 +84,14 @@ CREATE TABLE IF NOT EXISTS analytics_salt (
     salt TEXT NOT NULL
 );
 
+-- Genres writers can pick on top of the dataset's categories. Mods add more.
+CREATE TABLE IF NOT EXISTS genres (
+    name       TEXT PRIMARY KEY COLLATE NOCASE,
+    blurb      TEXT NOT NULL DEFAULT '',
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS comment_votes (
     comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -112,6 +120,18 @@ MIGRATIONS = {
 }
 
 
+# The genres Eidothea starts with; the dataset's own categories already cover the classics
+SEED_GENRES = [
+    ("Original Cryptids", "Creatures of your own making: sightings, field notes, the lore around them."),
+    ("Anomaly Files", "Containment reports and case files on things that shouldn't exist."),
+    ("Real-life Mysteries", "Unsolved cases, strange disappearances and things that really happened."),
+    ("Analog Horror", "Tapes, broadcasts and old media that went wrong."),
+    ("Liminal Spaces", "Empty malls, endless hallways, places between places."),
+    ("Rules Horror", "Follow the rules. Don't ask why."),
+    ("Found Logs and Transcripts", "Recovered chats, logs, recordings and transcripts."),
+    ("Lore and Theories", "Deep dives into the lore of games, films and fictional universes."),
+]
+
 def connect() -> sqlite3.Connection:
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     # FastAPI may run a dependency and its endpoint on different threadpool threads
@@ -131,6 +151,9 @@ def init() -> None:
                 if name not in have:
                     conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
         conn.execute("CREATE INDEX IF NOT EXISTS stories_status ON stories(status)")
+        # Only into an empty table, so a genre a mod removed stays removed
+        if not conn.execute("SELECT 1 FROM genres LIMIT 1").fetchone():
+            conn.executemany("INSERT INTO genres (name, blurb) VALUES (?, ?)", SEED_GENRES)
 
 
 def get_db():
