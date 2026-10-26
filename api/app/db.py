@@ -65,6 +65,25 @@ CREATE TABLE IF NOT EXISTS comments (
 
 CREATE INDEX IF NOT EXISTS comments_story ON comments(story_id);
 
+-- First-party analytics. No IPs or cookies: `visitor` is a hash of IP + browser with a
+-- salt that changes daily (see analytics_salt), so a visitor can't be followed across days.
+CREATE TABLE IF NOT EXISTS pageviews (
+    id       INTEGER PRIMARY KEY,
+    day      TEXT NOT NULL DEFAULT (date('now')),
+    path     TEXT NOT NULL,
+    story_id INTEGER,
+    source   TEXT,
+    visitor  TEXT NOT NULL,
+    device   TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS pageviews_day ON pageviews(day);
+
+CREATE TABLE IF NOT EXISTS analytics_salt (
+    day  TEXT PRIMARY KEY,
+    salt TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS comment_votes (
     comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -76,6 +95,16 @@ CREATE TABLE IF NOT EXISTS comment_votes (
 # Columns added after the first release. CREATE TABLE IF NOT EXISTS won't add them
 # to an existing database, so they're added here when missing.
 MIGRATIONS = {
+    "users": {
+        "insights": "INTEGER NOT NULL DEFAULT 0",  # may open /insights (the overseer always can)
+        "last_seen_at": "TEXT",
+        "source": "TEXT",  # their answer to "how did you hear about us?"
+        "landing": "TEXT",  # where their first visit came from (share link tag or referring site)
+        "display_name": "TEXT NOT NULL DEFAULT ''",
+        "bio": "TEXT NOT NULL DEFAULT ''",
+        "instagram": "TEXT NOT NULL DEFAULT ''",
+        "profile_public": "INTEGER NOT NULL DEFAULT 0",
+    },
     "stories": {
         "subtitle": "TEXT NOT NULL DEFAULT ''",
         "status": "TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published'))",

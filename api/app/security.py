@@ -55,7 +55,7 @@ def user_for_token(conn: sqlite3.Connection, token: str | None) -> sqlite3.Row |
     if not token:
         return None
     return conn.execute(
-        """SELECT u.id, u.username, u.role, u.created_at
+        """SELECT u.id, u.username, u.role, u.created_at, u.insights, u.last_seen_at
            FROM sessions s JOIN users u ON u.id = s.user_id
            WHERE s.token_hash = ? AND s.expires_at > ?""",
         (_token_hash(token), datetime.now(timezone.utc).isoformat()),
@@ -70,6 +70,11 @@ def can_edit_story(user, story) -> bool:
     if not user:
         return False
     return story["author_id"] == user["id"] or level(user) >= ROLE_LEVEL["mod"]
+
+
+def can_view_insights(user) -> bool:
+    """The overseer, plus whoever the overseer has let in."""
+    return bool(user) and (user["role"] == "overseer" or bool(user["insights"]))
 
 
 def can_manage_user(actor, target) -> bool:

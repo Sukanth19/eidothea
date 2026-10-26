@@ -6,10 +6,11 @@ import sqlite3
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
-from fastapi import Cookie, Depends, FastAPI, HTTPException, Query, Response
+from fastapi import BackgroundTasks, Cookie, Depends, FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
-from . import db
+from . import db, insights
+from .deps import Conn, CurrentUser, OptionalUser
 from .gaming import with_gaming_category
 from .security import (
     ROLE_LEVEL,
@@ -18,11 +19,11 @@ from .security import (
     assignable_roles,
     can_edit_story,
     can_manage_user,
+    can_view_insights,
     create_session,
     delete_session,
     hash_password,
     level,
-    user_for_token,
     verify_password,
 )
 
@@ -37,28 +38,17 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Eidothea", lifespan=lifespan)
-
-Conn = Annotated[sqlite3.Connection, Depends(db.get_db)]
-
-
-# --------------------------------------------------------------------------- auth deps
-
-def optional_user(conn: Conn, eidothea_session: Annotated[str | None, Cookie()] = None):
-    return user_for_token(conn, eidothea_session)
-
-
-def require_user(user=Depends(optional_user)):
-    if not user:
-        raise HTTPException(401, "You need to log in first.")
-    return user
-
-
-OptionalUser = Annotated[sqlite3.Row | None, Depends(optional_user)]
-CurrentUser = Annotated[sqlite3.Row, Depends(require_user)]
+app.include_router(insights.router)
 
 
 def user_json(u) -> dict:
-    return {"id": u["id"], "username": u["username"], "role": u["role"], "created_at": u["created_at"]}
+    return {
+        "id": u["id"],
+        "username": u["username"],
+        "role": u["role"],
+        "created_at": u["created_at"],
+        "insights": can_view_insights(u),
+    }
 
 
 # --------------------------------------------------------------------------- models
@@ -66,6 +56,18 @@ def user_json(u) -> dict:
 class Credentials(BaseModel):
     username: str = Field(min_length=3, max_length=24, pattern=r"^[A-Za-z0-9_-]+$")
     password: str = Field(min_length=8, max_length=128)
+
+
+class Registration(Credentials):
+    # Both optional: the answer to "how did you hear about us?" and where their first visit came from
+    source: str | None = Field(default=None, max_length=80)
+    landing: str | None = Field(default=None, max_length=120)
+
+    @field_validator("source", "landing")
+    @classmethod
+    def tidy(cls, v: str | None) -> str | None:
+        v = " ".join((v or "").split())
+        return v or None
 
 
 Status = Literal["draft", "published"]
@@ -154,6 +156,7 @@ STORY_FROM = """stories s
 
 STORY_COLUMNS = f"""
     s.id, s.title, s.subtitle, s.author_id, s.author_name, u.username AS author_username,
+    COALESCE(u.profile_public, 0) AS author_public,
     s.tags, s.categories, s.rating AS archive_rating, s.reading_minutes, s.source, s.truncated,
     s.status, s.published_at, s.updated_at,
     COALESCE(r.n, 0) AS rating_count,
@@ -171,6 +174,7 @@ def story_json(row, user, *, body: bool = False) -> dict:
         "subtitle": row["subtitle"],
         "author": row["author_username"] or row["author_name"],
         "author_id": row["author_id"],
+        "author_public": bool(row["author_public"]),
         "tags": json.loads(row["tags"]),
         "categories": json.loads(row["categories"]),
         "rating": round(row["score"], 2) if row["score"] is not None else None,
@@ -238,15 +242,16 @@ def set_session_cookie(response: Response, token: str) -> None:
 # --------------------------------------------------------------------------- auth
 
 @app.post("/api/auth/register", status_code=201)
-def register(creds: Credentials, response: Response, conn: Conn):
+def register(creds: Registration, response: Response, conn: Conn, tasks: BackgroundTasks):
     try:
         cur = conn.execute(
-            "INSERT INTO users (username, password_hash) VALUES (?, ?)",
-            (creds.username, hash_password(creds.password)),
+            "INSERT INTO users (username, password_hash, source, landing) VALUES (?, ?, ?, ?)",
+            (creds.username, hash_password(creds.password), creds.source, creds.landing),
         )
     except sqlite3.IntegrityError:
         raise HTTPException(409, "That username is taken.")
     conn.commit()
+    tasks.add_task(insights.announce_signup, creds.username, creds.source, creds.landing)
     set_session_cookie(response, create_session(conn, cur.lastrowid))
     user = conn.execute("SELECT * FROM users WHERE id = ?", (cur.lastrowid,)).fetchone()
     return {"user": user_json(user)}
@@ -285,6 +290,7 @@ def list_stories(
     sort: Literal["new", "rating", "short", "long"] = "new",
     source: Literal["all", "user", "import"] = "all",
     mine: bool = False,
+    author: str = "",
     status: Status = "published",
     page: int = Query(1, ge=1),
     per_page: int = Query(24, ge=1, le=60),
@@ -299,6 +305,9 @@ def list_stories(
     if source != "all":
         where.append("s.source = ?")
         args.append(source)
+    if author:
+        where.append("u.username = ?")
+        args.append(author)
     if mine or status == "draft":
         if not user:
             raise HTTPException(401, "You need to log in first.")

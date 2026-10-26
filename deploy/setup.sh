@@ -59,10 +59,14 @@ fi
 
 step "Services"
 if [ -n "$DOMAIN" ]; then SITE="$DOMAIN"; SECURE=1; else SITE=":80"; SECURE=0; fi
+# Keep settings added by hand (the Discord sign-up webhook) when this runs again
+WEBHOOK=$(grep -s '^SIGNUP_WEBHOOK_URL=' /etc/eidothea.env || true)
 cat > /etc/eidothea.env <<EOF
 COOKIE_SECURE=$SECURE
 NEXT_TELEMETRY_DISABLED=1
 EOF
+if [ -n "$WEBHOOK" ]; then echo "$WEBHOOK" >> /etc/eidothea.env; fi
+chmod 600 /etc/eidothea.env  # the webhook URL works like a password
 install -m 0644 "$APP_DIR/deploy/eidothea-api.service" "$APP_DIR/deploy/eidothea-web.service" /etc/systemd/system/
 sed "s|{\$SITE}|$SITE|" "$APP_DIR/deploy/Caddyfile" > /etc/caddy/Caddyfile
 install -m 0755 "$APP_DIR/deploy/backup.sh" /etc/cron.daily/eidothea-backup
