@@ -8,14 +8,14 @@ import type { Story } from "./types";
 const API_URL = process.env.API_URL ?? "http://127.0.0.1:8000";
 
 const C = {
-  bg: "#0a0b09",
-  panel: "#11130f",
-  line: "#2a2f26",
-  text: "#d7dfcf",
-  muted: "#838e7c",
-  green: "#8fe08a",
-  amber: "#e3ac52",
-  red: "#d4483b",
+  bg: "#0c0a0b",
+  panel: "#141012",
+  line: "#2f2629",
+  text: "#e3d9c8",
+  muted: "#8c8079",
+  blood: "#c4493b",
+  amber: "#d6a55c",
+  red: "#e0392b",
 };
 
 let fontsLoaded: Promise<{ name: string; data: Buffer; weight: 400; style: "normal" | "italic" }[]> | null = null;
@@ -25,9 +25,9 @@ export function cardFonts() {
   fontsLoaded ??= Promise.all(
     [
       ["Elite", "SpecialElite-Regular.ttf", "normal"],
-      ["VT", "VT323-Regular.ttf", "normal"],
-      ["Plex", "IBMPlexMono-Regular.ttf", "normal"],
-      ["Plex", "IBMPlexMono-Italic.ttf", "italic"],
+      ["Fell", "IMFellEnglishSC-Regular.ttf", "normal"],
+      ["Garamond", "EBGaramond-Regular.ttf", "normal"],
+      ["Garamond", "EBGaramond-Italic.ttf", "italic"],
     ].map(async ([name, file, style]) => ({
       name,
       data: await readFile(join(dir, file)),
@@ -61,7 +61,7 @@ function RatingBar({ value, width }: { value: number; width: number }) {
       <div style={{ display: "flex", width, height: 12, background: C.line }}>
         <div style={{ width: `${value * 10}%`, height: "100%", background: C.amber }} />
       </div>
-      <span style={{ fontFamily: "VT", color: C.amber }}>{value.toFixed(1)} / 10</span>
+      <span style={{ fontFamily: "Fell", color: C.amber }}>{value.toFixed(1)} / 10</span>
     </div>
   );
 }
@@ -73,35 +73,35 @@ export function StoryCard({ story, host }: { story: Story; host: string }) {
   const budget = (title.length <= 28 ? 300 : title.length <= 60 ? 230 : 170) - (story.subtitle ? 50 : 0);
   const excerpt = clip(plainText(story.body), budget);
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 0, background: `radial-gradient(ellipse at 30% 10%, #1a2016 0%, ${C.bg} 65%)`, padding: "250px 90px 260px", color: C.text, fontFamily: "Plex" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "VT", fontSize: 44, letterSpacing: 6 }}>
-        <span style={{ color: C.red }}>// TRANSMISSION RECOVERED</span>
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", gap: 0, background: `radial-gradient(ellipse at 30% 10%, #22141a 0%, ${C.bg} 65%)`, padding: "250px 90px 260px", color: C.text, fontFamily: "Garamond" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "Fell", fontSize: 36, letterSpacing: 5 }}>
+        <span style={{ color: C.red }}>RECOVERED FROM THE STACKS</span>
         <span style={{ color: C.muted }}>#{String(story.id).padStart(4, "0")}</span>
       </div>
 
       <div style={{ display: "flex", fontFamily: "Elite", color: C.amber, fontSize: titleSize(title, [112, 92, 74]), lineHeight: 1.15, marginTop: 60 }}>{title}</div>
-      {story.subtitle && <div style={{ display: "flex", fontSize: 38, color: C.muted, marginTop: 28, lineHeight: 1.4 }}>{clip(story.subtitle, 120)}</div>}
+      {story.subtitle && <div style={{ display: "flex", fontSize: 42, color: C.muted, marginTop: 28, lineHeight: 1.4 }}>{clip(story.subtitle, 120)}</div>}
 
-      <div style={{ display: "flex", fontFamily: "VT", fontSize: 44, color: C.muted, marginTop: 40, gap: 30 }}>
+      <div style={{ display: "flex", fontFamily: "Fell", fontSize: 36, color: C.muted, marginTop: 40, gap: 30 }}>
         <span>BY {(story.author ?? "UNKNOWN").toUpperCase()}</span>
         <span>{story.reading_minutes} MIN READ</span>
       </div>
 
-      <div style={{ display: "flex", flexShrink: 0, marginTop: 60, padding: "44px 48px", background: C.panel, border: `2px solid ${C.line}`, borderLeft: `8px solid ${C.amber}`, fontSize: 38, lineHeight: 1.65, fontStyle: "italic" }}>
+      <div style={{ display: "flex", flexShrink: 0, marginTop: 60, padding: "44px 48px", background: C.panel, border: `2px solid ${C.line}`, borderLeft: `8px solid ${C.amber}`, fontSize: 44, lineHeight: 1.55, fontStyle: "italic" }}>
         “{excerpt}”
       </div>
 
       {story.rating != null && (
-        <div style={{ display: "flex", marginTop: 56, fontSize: 52 }}>
+        <div style={{ display: "flex", marginTop: 56, fontSize: 42 }}>
           <RatingBar value={story.rating} width={260} />
         </div>
       )}
 
       <div style={{ display: "flex", flexDirection: "column", marginTop: "auto", alignItems: "center", gap: 6 }}>
-        <span style={{ fontFamily: "VT", fontSize: 120, color: C.green, letterSpacing: 14 }}>EIDOTHEA</span>
-        <span style={{ fontFamily: "VT", fontSize: 34, color: C.muted, letterSpacing: 6, marginTop: 8 }}>READ IT AT</span>
-        {/* Lowercase, as people will type it, shrunk to fit one line (VT323 is ~0.45em per character) */}
-        <span style={{ fontFamily: "VT", fontSize: Math.min(48, Math.floor((880 / host.length - 2) / 0.45)), color: C.text, letterSpacing: 2 }}>{host.toLowerCase()}</span>
+        <span style={{ fontFamily: "Fell", fontSize: 96, color: C.blood, letterSpacing: 12 }}>EIDOTHEA</span>
+        <span style={{ fontFamily: "Fell", fontSize: 28, color: C.muted, letterSpacing: 5, marginTop: 8 }}>READ IT AT</span>
+        {/* Lowercase, as people will type it, shrunk to fit one line (Garamond is ~0.5em per character) */}
+        <span style={{ fontFamily: "Garamond", fontSize: Math.min(48, Math.floor((880 / host.length - 2) / 0.5)), color: C.text, letterSpacing: 2 }}>{host.toLowerCase()}</span>
       </div>
     </div>
   );
@@ -111,16 +111,16 @@ export function StoryCard({ story, host }: { story: Story; host: string }) {
 export function LinkCard({ story }: { story: Story }) {
   const title = clip(story.title, 90);
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: `radial-gradient(ellipse at 20% 0%, #1a2016 0%, ${C.bg} 70%)`, padding: "60px 70px", color: C.text, fontFamily: "Plex", borderLeft: `10px solid ${story.source === "user" ? C.green : C.amber}` }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "VT", fontSize: 34, letterSpacing: 4 }}>
-        <span style={{ color: C.green, letterSpacing: 10 }}>EIDOTHEA</span>
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: `radial-gradient(ellipse at 20% 0%, #22141a 0%, ${C.bg} 70%)`, padding: "60px 70px", color: C.text, fontFamily: "Garamond", borderLeft: `10px solid ${story.source === "user" ? C.blood : C.amber}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "Fell", fontSize: 28, letterSpacing: 3 }}>
+        <span style={{ color: C.blood, letterSpacing: 8 }}>EIDOTHEA</span>
         <span style={{ color: C.muted }}>FILE #{String(story.id).padStart(4, "0")}</span>
       </div>
       <div style={{ display: "flex", fontFamily: "Elite", color: C.amber, fontSize: titleSize(title, [80, 64, 50]), lineHeight: 1.15, marginTop: 40 }}>{title}</div>
-      <div style={{ display: "flex", fontSize: 28, color: C.muted, marginTop: 22, lineHeight: 1.45 }}>
+      <div style={{ display: "flex", fontSize: 32, color: C.muted, marginTop: 22, lineHeight: 1.4 }}>
         {clip(story.subtitle || plainText(story.body), 150)}
       </div>
-      <div style={{ display: "flex", marginTop: "auto", justifyContent: "space-between", alignItems: "center", fontFamily: "VT", fontSize: 36, color: C.muted }}>
+      <div style={{ display: "flex", marginTop: "auto", justifyContent: "space-between", alignItems: "center", fontFamily: "Fell", fontSize: 28, color: C.muted }}>
         <span>BY {(story.author ?? "UNKNOWN").toUpperCase()} · {story.reading_minutes} MIN READ</span>
         {story.rating != null && <RatingBar value={story.rating} width={150} />}
       </div>
