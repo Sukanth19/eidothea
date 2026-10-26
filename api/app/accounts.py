@@ -197,9 +197,20 @@ def send_verification(conn, user, email: str, tasks: BackgroundTasks) -> None:
 
 
 def email_taken(conn, email: str, user_id: int | None = None) -> bool:
+    """Only a confirmed address is taken, so typing someone else's email can't lock them out."""
     return bool(conn.execute(
-        "SELECT 1 FROM users WHERE email = ? COLLATE NOCASE AND id IS NOT ?", (email, user_id)
+        "SELECT 1 FROM users WHERE email = ? COLLATE NOCASE AND id IS NOT ? AND email_verified_at IS NOT NULL",
+        (email, user_id),
     ).fetchone())
+
+
+def release_email(conn, email: str, user_id: int | None = None) -> None:
+    """Takes an unconfirmed address off whoever else gave it, before it's stored for someone new.
+    Their confirmation link still works, unless the new account confirms first."""
+    conn.execute(
+        "UPDATE users SET email = NULL WHERE email = ? COLLATE NOCASE AND id IS NOT ? AND email_verified_at IS NULL",
+        (email, user_id),
+    )
 
 
 # --------------------------------------------------------------------------- membership
@@ -254,6 +265,7 @@ def register(body: Registration, request: Request, response: Response, conn: Con
     guard.check_email_domain(body.email)
     if email_taken(conn, body.email):
         raise HTTPException(409, "That email already has an account. Log in, or reset the password.")
+    release_email(conn, body.email)
     try:
         cur = conn.execute(
             "INSERT INTO users (username, password_hash, email, source, landing, invite_code) VALUES (?, ?, ?, ?, ?, ?)",
@@ -306,6 +318,7 @@ def verify(body: TokenIn, response: Response, conn: Conn, tasks: BackgroundTasks
     if email_taken(conn, row["email"], row["user_id"]):
         conn.commit()
         raise HTTPException(409, "Another account confirmed that address first.")
+    release_email(conn, row["email"], row["user_id"])
     conn.execute(
         "UPDATE users SET email = ?, email_verified_at = datetime('now') WHERE id = ?", (row["email"], row["user_id"])
     )
@@ -337,6 +350,7 @@ def change_email(body: EmailIn, user: CurrentUser, conn: Conn, tasks: Background
     if email_taken(conn, body.email, user["id"]):
         raise HTTPException(409, "That email belongs to another account.")
     if not user["email"]:
+        release_email(conn, body.email, user["id"])
         conn.execute("UPDATE users SET email = ? WHERE id = ?", (body.email, user["id"]))
         conn.commit()
     send_verification(conn, user, body.email, tasks)
