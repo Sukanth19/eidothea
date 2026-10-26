@@ -9,7 +9,7 @@ import { Reader } from "@/components/Reader";
 import { ScrambleText } from "@/components/ScrambleText";
 import { Rating } from "@/components/StoryCard";
 import { Sigil } from "@/components/Sigil";
-import { FollowButton, RecommendButton } from "@/components/Social";
+import { BookmarkButton, FollowButton, RecommendButton } from "@/components/Social";
 import { Whisper } from "@/components/Whisper";
 import { excerpt, formatDate } from "@/lib/format";
 import { apiGet, currentUser } from "@/lib/server-api";
@@ -111,6 +111,7 @@ export default async function StoryPage({ params, searchParams }: Props) {
               autoOpen={(justPublished && ownStory) || query?.share === "1"}
               heading={justPublished && ownStory ? "Your story is live. Share it." : undefined}
             />
+            {!ownStory && <BookmarkButton storyId={story.id} initial={!!story.bookmarked} user={user} />}
           </div>
         )}
         <div className="chips">

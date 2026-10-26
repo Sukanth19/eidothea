@@ -152,6 +152,16 @@ CREATE TABLE IF NOT EXISTS recommends (
 
 CREATE INDEX IF NOT EXISTS recommends_story ON recommends(story_id);
 
+-- Stories saved to read later. Private, unlike recommends.
+CREATE TABLE IF NOT EXISTS bookmarks (
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    story_id   INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, story_id)
+);
+
+CREATE INDEX IF NOT EXISTS bookmarks_story ON bookmarks(story_id);
+
 -- The bell in the nav. kind: follow, story, comment, recommend, invite_used, member, rejected
 CREATE TABLE IF NOT EXISTS notifications (
     id         INTEGER PRIMARY KEY,

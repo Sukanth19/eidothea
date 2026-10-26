@@ -132,6 +132,31 @@ def unrecommend(story_id: int, conn: Conn, user: MemberUser):
     return recommend_state(conn, story_id, user)
 
 
+# --------------------------------------------------------------------------- bookmarks
+
+def bookmark_state(conn, story_id: int, user) -> dict:
+    return {"bookmarked": bool(user) and bool(conn.execute(
+        "SELECT 1 FROM bookmarks WHERE story_id = ? AND user_id = ?", (story_id, user["id"])
+    ).fetchone())}
+
+
+@router.put("/api/stories/{story_id}/bookmark")
+def bookmark(story_id: int, conn: Conn, user: CurrentUser):
+    published_story(conn, story_id)
+    guard.limit(f"bookmark:{user['id']}", 300, 3600)
+    conn.execute("INSERT OR IGNORE INTO bookmarks (user_id, story_id) VALUES (?, ?)", (user["id"], story_id))
+    conn.commit()
+    return bookmark_state(conn, story_id, user)
+
+
+@router.delete("/api/stories/{story_id}/bookmark")
+def unbookmark(story_id: int, conn: Conn, user: CurrentUser):
+    # No published check: a story taken back to drafts can still be let go of
+    conn.execute("DELETE FROM bookmarks WHERE user_id = ? AND story_id = ?", (user["id"], story_id))
+    conn.commit()
+    return bookmark_state(conn, story_id, user)
+
+
 # --------------------------------------------------------------------------- notifications
 
 @router.get("/api/notifications")

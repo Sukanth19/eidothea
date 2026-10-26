@@ -98,6 +98,8 @@ export interface Story extends StoryBase {
   body: string;
   my_rating?: number | null;
   recommended?: boolean;
+  /** Saved to the logged-in reader's list */
+  bookmarked?: boolean;
 }
 
 export interface RatingState {

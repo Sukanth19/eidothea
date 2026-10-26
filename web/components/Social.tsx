@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { api } from "@/lib/client-api";
 import type { SocialInfo, User } from "@/lib/types";
+import { Icon } from "./Icon";
 
 /** Follow / unfollow a writer. Readers and members can follow; it doesn't move any rankings. */
 export function FollowButton({ username, initial, user }: { username: string; initial: SocialInfo; user: User | null }) {
@@ -30,6 +31,42 @@ export function FollowButton({ username, initial, user }: { username: string; in
     <span className="follow">
       <button type="button" className={`follow-btn${info.is_following ? " ghost" : ""}`} onClick={toggle} disabled={busy} aria-pressed={info.is_following}>
         {info.is_following ? "FOLLOWING" : "FOLLOW"}
+      </button>
+      {error && <span className="msg error">{error}</span>}
+    </span>
+  );
+}
+
+/** Save a story to read later. Anyone logged in can; the list is private (see /saved). */
+export function BookmarkButton({ storyId, initial, user }: { storyId: number; initial: boolean; user: User | null }) {
+  const [saved, setSaved] = useState(initial);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+
+  if (!user) {
+    return (
+      <Link href={`/login?next=/stories/${storyId}`} className="btn ghost share-btn">
+        <Icon name="bookmark" size={16} /> SAVE
+      </Link>
+    );
+  }
+
+  async function toggle() {
+    setBusy(true);
+    setError("");
+    try {
+      const r = await api<{ bookmarked: boolean }>(`/api/stories/${storyId}/bookmark`, { method: saved ? "DELETE" : "PUT" });
+      setSaved(r.bookmarked);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+    setBusy(false);
+  }
+
+  return (
+    <span className="follow">
+      <button type="button" className={`share-btn${saved ? "" : " ghost"}`} onClick={toggle} disabled={busy} aria-pressed={saved} title={saved ? "Remove from your saved stories" : "Save to read later"}>
+        <Icon name="bookmark" size={16} /> {saved ? "SAVED" : "SAVE"}
       </button>
       {error && <span className="msg error">{error}</span>}
     </span>

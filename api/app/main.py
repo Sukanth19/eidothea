@@ -227,6 +227,7 @@ def list_stories(
     author: str = "",
     recommended_by: str = "",
     following: bool = False,
+    bookmarked: bool = False,
     status: Status = "published",
     page: int = Query(1, ge=1),
     per_page: int = Query(24, ge=1, le=60),
@@ -259,9 +260,21 @@ def list_stories(
         where.append("s.author_id = ?")
         args.append(user["id"])
 
+    joins, join_args = "", []
+    if bookmarked:
+        if not user:
+            raise HTTPException(401, "You need to log in first.")
+        joins = " JOIN bookmarks bm ON bm.story_id = s.id AND bm.user_id = ?"
+        join_args = [user["id"]]
+
     where_sql = "WHERE " + " AND ".join(where)
+    newest = (
+        "bm.created_at DESC, s.id DESC" if bookmarked  # most recently saved first
+        else "COALESCE(s.updated_at, s.published_at) DESC, s.id DESC" if status == "draft"
+        else "s.published_at DESC, s.id DESC"
+    )
     order_sql = {
-        "new": ("COALESCE(s.updated_at, s.published_at) DESC, s.id DESC" if status == "draft" else "s.published_at DESC, s.id DESC"),
+        "new": newest,
         "trending": "COALESCE(t.heat, 0) DESC, score IS NULL, score DESC, s.id DESC",
         "rating": "score IS NULL, score DESC, rating_count DESC, s.id",
         "short": "s.reading_minutes ASC, s.id",
@@ -269,7 +282,8 @@ def list_stories(
     }[sort]
 
     trending = f" LEFT JOIN ({reading.HEAT_SQL}) t ON t.story_id = s.id" if sort == "trending" else ""
-    base = f"FROM {STORY_FROM}{trending} {where_sql}"
+    base = f"FROM {STORY_FROM}{joins}{trending} {where_sql}"
+    args = [*join_args, *args]
     total = conn.execute(f"SELECT COUNT(*) {base}", args).fetchone()[0]
     rows = conn.execute(
         f"SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt {base} ORDER BY {order_sql} LIMIT ? OFFSET ?",
@@ -319,6 +333,7 @@ def get_story(story_id: int, conn: Conn, user: OptionalUser):
     if user:
         out["my_rating"] = rating_json(conn, story_id, user)["my_rating"]
         out["recommended"] = social.recommend_state(conn, story_id, user)["recommended"]
+        out["bookmarked"] = social.bookmark_state(conn, story_id, user)["bookmarked"]
     return out
 
 
