@@ -9,7 +9,7 @@ from typing import Annotated, Literal
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
-from . import accounts, db, guard, insights, mail, reading, social
+from . import accounts, db, guard, insights, mail, moderation, reading, social
 from .notify import notify
 from .accounts import MemberUser, ReaderUser, grant_membership, user_json
 from .deps import Conn, CurrentUser, ModUser, OptionalUser
@@ -30,6 +30,7 @@ async def lifespan(_app: FastAPI):
 app = FastAPI(title="Eidothea", lifespan=lifespan)
 app.include_router(accounts.router)
 app.include_router(insights.router)
+app.include_router(moderation.router)
 app.include_router(reading.router)
 app.include_router(social.router)
 
@@ -562,7 +563,10 @@ def comment_json(row, user) -> dict:
         "likes": row["likes"],
         "dislikes": row["dislikes"],
         "my_vote": row["my_vote"] or 0,
-        "can_delete": bool(user) and (row["user_id"] == user["id"] or level(user) >= ROLE_LEVEL["mod"]),
+        # The writer, or staff who outrank them (as with stories)
+        "can_delete": bool(user) and (
+            row["user_id"] == user["id"] or level(user) >= ROLE_LEVEL["mod"] and level(user) > ROLE_LEVEL[row["role"]]
+        ),
     }
 
 

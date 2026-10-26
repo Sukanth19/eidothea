@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Comments } from "@/components/Comments";
 import { DeleteStoryButton } from "@/components/DeleteStoryButton";
 import { RateStory } from "@/components/RateStory";
+import { ReportButton } from "@/components/Reports";
 import { ShareStory } from "@/components/ShareStory";
 import { Reader } from "@/components/Reader";
 import { ScrambleText } from "@/components/ScrambleText";
@@ -164,6 +165,11 @@ export default async function StoryPage({ params, searchParams }: Props) {
             <ShareStory storyId={story.id} title={story.title} label="SHARE THIS STORY" />
             <Link href="/random" className="btn" prefetch={false}>ANOTHER ONE</Link>
           </div>
+          {!ownStory && (
+            <div className="actions" style={{ justifyContent: "center", marginTop: ".8rem" }}>
+              <ReportButton target={{ story_id: story.id }} user={user} label="[report this story]" />
+            </div>
+          )}
           {related && related.items.length > 0 && (
             <section className="related" aria-label="More like this">
               <div className="section-head"><h2>If this one got under your skin…</h2></div>

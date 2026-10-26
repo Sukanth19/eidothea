@@ -24,6 +24,35 @@ export const WARNING_LABEL = {
 
 export type ContentWarning = keyof typeof WARNING_LABEL;
 
+/** Why a reader reports something (the API's moderation.Reason) */
+export const REPORT_REASON = {
+  spam: "Spam or advertising",
+  harassment: "Harassment or bullying",
+  hate: "Hateful",
+  sexual: "Sexual content that crosses the line",
+  "self-harm": "Someone may be in danger",
+  stolen: "Stolen from another writer",
+  other: "Something else",
+} as const;
+
+export type ReportReason = keyof typeof REPORT_REASON;
+
+/** Open reports about one story or comment, for the keepers */
+export interface OpenReport {
+  kind: "story" | "comment";
+  story_id: number | null;
+  comment_id: number | null;
+  /** The story to open: the reported one, or the one the comment is on */
+  link_story: number;
+  story_title: string | null;
+  comment_body: string | null;
+  author: string | null;
+  author_id: number | null;
+  first_at: string;
+  reasons: Record<string, number>;
+  notes: { by: string; note: string }[];
+}
+
 export interface User {
   id: number;
   username: string;

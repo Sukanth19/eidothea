@@ -353,7 +353,7 @@ a.chip.on:hover { color: var(--bg); }
 .comment-body p { margin: 0 0 .5em; }
 .comment-body blockquote { margin: 0 0 .5em; padding: .3rem .8rem; border-left: 2px solid var(--amber); background: var(--panel); }
 .comment-body h2, .comment-body h3 { font-size: 1.05rem; margin: 0 0 .4em; }
-.comment-actions { display: flex; align-items: center; gap: .5rem; }
+.comment-actions { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; }
 .comment-head a.muted { color: var(--muted); }
 .thread { margin-bottom: 1.4rem; }
 .comment-list.nested { margin: 0; }
@@ -361,6 +361,13 @@ a.chip.on:hover { color: var(--bg); }
 .comment:target { border-left-color: var(--amber); background: linear-gradient(90deg, rgba(214, 165, 92, .08), transparent 60%); }
 .reply-form { margin: .8rem 0 0 1.6rem; }
 .mention { color: var(--amber); }
+
+/* ---------- Reports ---------- */
+.report-form { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: .5rem 0; width: 100%; }
+.report-form select, .report-form input { width: auto; flex: 1 1 14rem; margin: 0; }
+.report-actions { display: inline-flex; gap: .5rem; flex-wrap: wrap; }
+.report-done { margin: 0; }
+.report-item { padding: 1rem 0; }
 .vote { border-color: var(--line); color: var(--muted); font-size: .88rem; padding: 0 .55rem; }
 .vote:hover { background: transparent; color: var(--amber); border-color: var(--amber); box-shadow: none; }
 .vote.on { color: var(--bg); background: var(--amber); border-color: var(--amber); }

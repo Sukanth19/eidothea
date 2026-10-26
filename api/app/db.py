@@ -183,6 +183,23 @@ CREATE TABLE IF NOT EXISTS genres (
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
+-- Readers flagging a story or a comment for the keepers. Goes when the thing reported does.
+CREATE TABLE IF NOT EXISTS reports (
+    id          INTEGER PRIMARY KEY,
+    reporter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    story_id    INTEGER REFERENCES stories(id) ON DELETE CASCADE,
+    comment_id  INTEGER REFERENCES comments(id) ON DELETE CASCADE,
+    reason      TEXT NOT NULL,
+    note        TEXT NOT NULL DEFAULT '',
+    status      TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'dismissed')),
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    handled_by  INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    handled_at  TEXT,
+    CHECK ((story_id IS NULL) <> (comment_id IS NULL))
+);
+
+CREATE INDEX IF NOT EXISTS reports_open ON reports(status, story_id, comment_id);
+
 CREATE TABLE IF NOT EXISTS comment_votes (
     comment_id INTEGER NOT NULL REFERENCES comments(id) ON DELETE CASCADE,
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,

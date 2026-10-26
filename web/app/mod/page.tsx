@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { GenreManager, Queue } from "@/components/Membership";
+import { ReportQueue } from "@/components/Reports";
 import { apiGet, currentUser } from "@/lib/server-api";
-import { ROLE_LEVEL, type Genre, type QueuedApplication } from "@/lib/types";
+import { ROLE_LEVEL, type Genre, type OpenReport, type QueuedApplication } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Keepers" };
 
@@ -20,7 +21,8 @@ export default async function ModPage() {
     );
   }
 
-  const [queue, genres] = await Promise.all([
+  const [reports, queue, genres] = await Promise.all([
+    apiGet<OpenReport[]>("/api/reports"),
     apiGet<QueuedApplication[]>("/api/applications"),
     apiGet<Genre[]>("/api/genres"),
   ]);
@@ -28,6 +30,9 @@ export default async function ModPage() {
   return (
     <>
       <h1 className="flicker">The keepers&apos; desk</h1>
+      <h2>Reports</h2>
+      <p className="muted" style={{ maxWidth: "70ch" }}>Stories and comments readers flagged. Dismiss a report if nothing&apos;s wrong; taking something down deletes it.</p>
+      <ReportQueue initial={reports ?? []} />
       <h2>Waiting list</h2>
       <p className="muted" style={{ maxWidth: "70ch" }}>Readers asking to become members. Letting someone in means they can post, comment and rate. They get an email either way.</p>
       <Queue initial={queue ?? []} />

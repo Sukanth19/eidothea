@@ -8,6 +8,7 @@ import { ROLE_LABEL, ROLE_LEVEL, type Comment, type User } from "@/lib/types";
 import { Icon } from "./Icon";
 import { Markup } from "./Markup";
 import { MembersOnly } from "./MembersOnly";
+import { ReportButton } from "./Reports";
 import { Sigil } from "./Sigil";
 
 type Sort = "top" | "new";
@@ -118,6 +119,7 @@ export function Comments({ storyId, initial, user }: { storyId: number; initial:
           </button>
           {user?.member && <button type="button" className="link-btn" onClick={() => startReply(root, c)}>[reply]</button>}
           {c.can_delete && <button type="button" className="link-btn" onClick={() => remove(c)}>[delete]</button>}
+          {user && c.author_id !== user.id && <ReportButton target={{ comment_id: c.id }} user={user} />}
         </div>
       </motion.li>
     );
