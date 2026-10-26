@@ -77,6 +77,7 @@ export function Filters({ categories }: { categories: Category[] }) {
         </select>
         <select value={params.get("sort") ?? "new"} onChange={e => update({ sort: e.target.value === "new" ? "" : e.target.value })} aria-label="Sort">
           <option value="new">NEWEST</option>
+          <option value="trending">TRENDING</option>
           <option value="rating">HIGHEST RATED</option>
           <option value="short">SHORTEST</option>
           <option value="long">LONGEST</option>

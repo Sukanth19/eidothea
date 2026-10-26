@@ -3,16 +3,18 @@ import { CountUp } from "@/components/CountUp";
 import { Hero } from "@/components/Hero";
 import { StoryGrid } from "@/components/StoryCard";
 import { apiGet, currentUser } from "@/lib/server-api";
-import type { Category, Stats, StoryPage } from "@/lib/types";
+import type { Category, ForYou, Stats, StoryPage } from "@/lib/types";
 
 export default async function Home() {
-  const [user, stats, top, fresh, categories] = await Promise.all([
+  const [user, stats, trending, top, fresh, categories] = await Promise.all([
     currentUser(),
     apiGet<Stats>("/api/stats"),
+    apiGet<StoryPage>("/api/stories?sort=trending&per_page=6"),
     apiGet<StoryPage>("/api/stories?sort=rating&per_page=6"),
     apiGet<StoryPage>("/api/stories?source=user&per_page=3"),
     apiGet<Category[]>("/api/categories"),
   ]);
+  const forYou = user?.email_verified ? await apiGet<ForYou>("/api/stories/for-you?limit=3") : null;
 
   return (
     <>
@@ -25,6 +27,26 @@ export default async function Home() {
           <div className="stat"><div className="n"><CountUp to={stats.users} /></div><div className="l">Souls registered</div></div>
           <div className="stat"><div className="n"><CountUp to={Math.round(stats.minutes / 60)} /></div><div className="l">Hours of reading</div></div>
         </div>
+      )}
+
+      {forYou && forYou.items.length > 0 && (
+        <>
+          <div className="section-head">
+            <h2>For you</h2>
+            <span className="muted">because you read {forYou.based_on.join(", ").toLowerCase()}</span>
+          </div>
+          <StoryGrid stories={forYou.items} />
+        </>
+      )}
+
+      {trending && trending.items.length > 0 && (
+        <>
+          <div className="section-head">
+            <h2>Spreading now</h2>
+            <Link href="/stories?sort=trending" className="caps">ALL TRENDING →</Link>
+          </div>
+          <StoryGrid stories={trending.items} />
+        </>
       )}
 
       {fresh && fresh.items.length > 0 && (

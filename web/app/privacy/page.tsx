@@ -19,6 +19,7 @@ export default function PrivacyPage() {
       <h2>If you have an account</h2>
       <ul>
         <li>Your username, a scrambled (hashed) copy of your password, and when you joined and were last active.</li>
+        <li>What you read, once your email is confirmed: which stories you open, how far down you get, roughly how long you spend, and whether you finish. It decides what&apos;s trending and what&apos;s picked for you, and nothing else.</li>
         <li>Your email address. It&apos;s used to confirm your account, reset your password and tell you about your membership, and it&apos;s never shown to anyone.</li>
         <li>How you became a member (founding spot, invite or waiting list) and, for invites, who invited you. A request to join the waiting list is kept with its note.</li>
         <li>What you write: stories, drafts, comments, ratings and likes.</li>

@@ -103,6 +103,12 @@ export interface StoryPage {
   pages: number;
 }
 
+export interface ForYou {
+  items: StorySummary[];
+  /** The genres the picks are based on */
+  based_on: string[];
+}
+
 export interface Category {
   name: string;
   count: number;

@@ -104,7 +104,7 @@ export default async function StoryPage({ params, searchParams }: Props) {
         </div>
       </header>
 
-      <Reader body={story.body} />
+      <Reader body={story.body} track={!draft && user?.email_verified ? story.id : undefined} />
 
       {story.truncated && (
         <p className="notice">
