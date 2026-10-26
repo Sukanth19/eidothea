@@ -37,6 +37,10 @@ app.include_router(social.router)
 # --------------------------------------------------------------------------- models
 
 Status = Literal["draft", "published"]
+# Content warnings a writer can put on a story; readers see them before the text
+ContentWarning = Literal[
+    "gore", "body-horror", "self-harm", "suicide", "abuse", "sexual-content", "animal-harm", "child-harm", "substance-use",
+]
 
 
 class StoryIn(BaseModel):
@@ -46,6 +50,7 @@ class StoryIn(BaseModel):
     body: str = Field(default="", max_length=100_000)
     tags: list[str] = Field(default_factory=list, max_length=15)
     categories: list[str] = Field(default_factory=list, max_length=5)
+    warnings: list[ContentWarning] = Field(default_factory=list, max_length=9)
     status: Status = "published"
 
     @field_validator("title", "subtitle", "body")
@@ -65,6 +70,11 @@ class StoryIn(BaseModel):
                 out.append(item)
         return out
 
+    @field_validator("warnings")
+    @classmethod
+    def unique_warnings(cls, v: list[str] | None) -> list[str] | None:
+        return list(dict.fromkeys(v)) if v is not None else v
+
 
 class StoryPatch(StoryIn):
     title: str | None = Field(default=None, max_length=200)
@@ -72,6 +82,7 @@ class StoryPatch(StoryIn):
     body: str | None = Field(default=None, max_length=100_000)
     tags: list[str] | None = Field(default=None, max_length=15)
     categories: list[str] | None = Field(default=None, max_length=5)
+    warnings: list[ContentWarning] | None = Field(default=None, max_length=9)
     status: Status | None = None
 
 
@@ -151,7 +162,7 @@ STORY_FROM = """stories s
 STORY_COLUMNS = f"""
     s.id, s.title, s.subtitle, s.author_id, s.author_name, u.username AS author_username,
     COALESCE(u.profile_public, 0) AS author_public, COALESCE(u.role, 'user') AS author_role,
-    s.tags, s.categories, s.rating AS archive_rating, s.reading_minutes, s.source, s.truncated,
+    s.tags, s.categories, s.warnings, s.rating AS archive_rating, s.reading_minutes, s.source, s.truncated,
     s.status, s.published_at, s.updated_at,
     COALESCE(r.n, 0) AS rating_count,
     CASE WHEN s.rating IS NULL THEN r.total * 1.0 / r.n
@@ -172,6 +183,7 @@ def story_json(row, user, *, body: bool = False) -> dict:
         "author_public": bool(row["author_public"]),
         "tags": json.loads(row["tags"]),
         "categories": json.loads(row["categories"]),
+        "warnings": json.loads(row["warnings"]),
         "rating": round(row["score"], 2) if row["score"] is not None else None,
         "archive_rating": row["archive_rating"],
         "rating_count": row["rating_count"],
@@ -383,10 +395,10 @@ def create_story(story: StoryIn, conn: Conn, user: MemberUser, tasks: Background
         guard.check_daily_cap(conn, user, "stories")
     categories = with_gaming_category(story.categories, story.title, story.tags, story.body)
     cur = conn.execute(
-        """INSERT INTO stories (title, subtitle, body, author_id, tags, categories, reading_minutes, source, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, 'user', ?)""",
+        """INSERT INTO stories (title, subtitle, body, author_id, tags, categories, warnings, reading_minutes, source, status)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'user', ?)""",
         (story.title, story.subtitle, story.body, user["id"], json.dumps(story.tags), json.dumps(categories),
-         reading_minutes(story.body), story.status),
+         json.dumps(story.warnings), reading_minutes(story.body), story.status),
     )
     if story.status == "published":
         social.announce_story(conn, cur.lastrowid, user["id"], tasks)
@@ -422,7 +434,7 @@ def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser,
             changes.get("tags", json.loads(existing["tags"])),
             changes.get("body", existing["body"]),
         )
-    for key in ("tags", "categories"):
+    for key in ("tags", "categories", "warnings"):
         if key in changes:
             changes[key] = json.dumps(changes[key])
 

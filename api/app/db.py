@@ -216,6 +216,7 @@ MIGRATIONS = {
         "subtitle": "TEXT NOT NULL DEFAULT ''",
         "status": "TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published'))",
         "announced_at": "TEXT",  # first went live; set once, so republishing doesn't count as new
+        "warnings": "TEXT NOT NULL DEFAULT '[]'",  # JSON array of content warnings, see main.ContentWarning
     },
 }
 

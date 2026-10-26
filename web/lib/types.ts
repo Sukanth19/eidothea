@@ -9,6 +9,21 @@ export const ROLE_LABEL: Record<Role, string> = {
 
 export const ROLE_LEVEL: Record<Role, number> = { user: 0, mod: 1, admin: 2, overseer: 3 };
 
+/** Content warnings a writer can put on a story (the API's ContentWarning) */
+export const WARNING_LABEL = {
+  gore: "Gore",
+  "body-horror": "Body horror",
+  "self-harm": "Self-harm",
+  suicide: "Suicide",
+  abuse: "Abuse",
+  "sexual-content": "Sexual content",
+  "animal-harm": "Harm to animals",
+  "child-harm": "Harm to children",
+  "substance-use": "Drugs and alcohol",
+} as const;
+
+export type ContentWarning = keyof typeof WARNING_LABEL;
+
 export interface User {
   id: number;
   username: string;
@@ -75,6 +90,7 @@ interface StoryBase {
   author_public: boolean;
   tags: string[];
   categories: string[];
+  warnings: ContentWarning[];
   /** Readers' 1-10 scores, blended with the dataset's rating for imported stories */
   rating: number | null;
   archive_rating: number | null;

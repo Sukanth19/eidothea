@@ -3,7 +3,7 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import { excerpt, formatDate } from "@/lib/format";
-import type { StorySummary } from "@/lib/types";
+import { WARNING_LABEL, type StorySummary } from "@/lib/types";
 import { DeleteStoryButton } from "./DeleteStoryButton";
 
 export function Rating({ value }: { value: number | null }) {
@@ -48,7 +48,12 @@ function StoryCard({ story: s }: { story: StorySummary }) {
   return (
     <Link href={draft ? `/stories/${s.id}/edit` : `/stories/${s.id}`} className={`card ${draft ? "draft" : s.source}`}>
       <div className="top">
-        <span>#{String(s.id).padStart(4, "0")} · {s.reading_minutes} MIN</span>
+        <span>
+          #{String(s.id).padStart(4, "0")} · {s.reading_minutes} MIN
+          {s.warnings.length > 0 && (
+            <> · <span className="cw" title={`Content warnings: ${s.warnings.map(w => WARNING_LABEL[w]).join(", ")}`}>CW</span></>
+          )}
+        </span>
         {draft ? (
           <span className="badge draft">DRAFT</span>
         ) : s.rating != null ? (

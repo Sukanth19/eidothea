@@ -10,7 +10,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { api } from "@/lib/client-api";
 import { readingMinutes } from "@/lib/format";
-import type { Story, User } from "@/lib/types";
+import { WARNING_LABEL, type ContentWarning, type Story, type User } from "@/lib/types";
 import { DeleteStoryButton } from "../DeleteStoryButton";
 import { Icon } from "../Icon";
 import { Markup } from "../Markup";
@@ -48,6 +48,7 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
   const [subtitle, setSubtitle] = useState(story?.subtitle ?? "");
   const [tags, setTags] = useState((story?.tags ?? []).join(", "));
   const [picked, setPicked] = useState<string[]>(story?.categories ?? []);
+  const [warnings, setWarnings] = useState<ContentWarning[]>(story?.warnings ?? []);
   const [save, setSave] = useState<SaveState>(story ? "saved" : "new");
   const [error, setError] = useState("");
   const [panel, setPanel] = useState<null | "settings" | "publish">(null);
@@ -58,9 +59,9 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
   useEffect(() => setMounted(true), []);
 
   // Saving runs from timers and editor callbacks, so it reads the latest values from refs
-  const latest = useRef({ title, subtitle, tags, picked, status });
+  const latest = useRef({ title, subtitle, tags, picked, warnings, status });
   useEffect(() => {
-    latest.current = { title, subtitle, tags, picked, status };
+    latest.current = { title, subtitle, tags, picked, warnings, status };
   });
   const idRef = useRef<number | null>(story?.id ?? null);
   const version = useRef(0);
@@ -145,6 +146,7 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
         body: fromDoc(editor.getJSON()),
         tags: f.tags.split(",").map(t => t.trim()).filter(Boolean),
         categories: f.picked,
+        warnings: f.warnings,
         ...extra,
       };
       if (!idRef.current && !extra.status && !payload.title && !payload.subtitle && !payload.body) {
@@ -244,6 +246,10 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
       set(v);
       changed();
     };
+  }
+
+  function toggleWarning(w: ContentWarning) {
+    edit(setWarnings)(warnings.includes(w) ? warnings.filter(x => x !== w) : [...warnings, w]);
   }
 
   function toggleCategory(c: string) {
@@ -390,6 +396,18 @@ export function StoryEditor({ story, genres = [], categories, user }: { story?: 
                       <label htmlFor="tags">Tags</label>
                       <input id="tags" value={tags} onChange={e => edit(setTags)(e.target.value)} placeholder="woods, radio, sleep paralysis" />
                       <p className="hint">Comma-separated, up to 15.</p>
+                    </div>
+
+                    <div className="field">
+                      <label>Content warnings</label>
+                      <div className="chips" style={{ marginTop: ".5rem" }}>
+                        {(Object.keys(WARNING_LABEL) as ContentWarning[]).map(w => (
+                          <button type="button" key={w} className={`chip${warnings.includes(w) ? " on" : ""}`} onClick={() => toggleWarning(w)} aria-pressed={warnings.includes(w)}>
+                            {WARNING_LABEL[w]}
+                          </button>
+                        ))}
+                      </div>
+                      <p className="hint">Readers see these before the story and choose whether to go on.</p>
                     </div>
 
                     {panel === "publish" ? (

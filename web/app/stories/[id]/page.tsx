@@ -10,6 +10,7 @@ import { ScrambleText } from "@/components/ScrambleText";
 import { Rating } from "@/components/StoryCard";
 import { Sigil } from "@/components/Sigil";
 import { BookmarkButton, FollowButton, RecommendButton } from "@/components/Social";
+import { WarningGate } from "@/components/WarningGate";
 import { Whisper } from "@/components/Whisper";
 import { excerpt, formatDate } from "@/lib/format";
 import { apiGet, currentUser } from "@/lib/server-api";
@@ -121,7 +122,9 @@ export default async function StoryPage({ params, searchParams }: Props) {
         </div>
       </header>
 
-      <Reader body={story.body} track={!draft && user?.email_verified ? story.id : undefined} />
+      <WarningGate warnings={ownStory ? [] : story.warnings}>
+        <Reader body={story.body} track={!draft && user?.email_verified ? story.id : undefined} />
+      </WarningGate>
 
       {story.truncated && (
         <p className="notice">
