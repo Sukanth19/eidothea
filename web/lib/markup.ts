@@ -64,22 +64,35 @@ function runLength(s: string, at: number, ch: string): number {
   return n;
 }
 
-/** Finds where a `delim` opened at `from` closes, or -1. */
-function findCloser(s: string, from: number, delim: string): number {
-  const ch = delim[0];
-  for (let j = from; j < s.length; j++) {
-    if (s[j] === "\\") {
+/** Whether a run of `n` delimiter characters can close `delim`. "***" closes any of the stars. */
+function fits(delim: string, n: number): boolean {
+  return n === delim.length || (delim[0] === "*" && n === 3);
+}
+
+/**
+ * Every place each delimiter could close in `s`, in order, as [start of the run, where the
+ * closing marker begins]. Found in one pass, so a line full of stars that never close
+ * doesn't rescan to its end once per star.
+ */
+function findClosers(s: string): Map<string, [number, number][]> {
+  const found = new Map<string, [number, number][]>(DELIMS.map(([d]) => [d, []]));
+  for (let j = 0; j < s.length; j++) {
+    const ch = s[j];
+    if (ch === "\\") {
       j++;
       continue;
     }
-    if (s[j] !== ch) continue;
+    if (ch !== "*" && ch !== "_" && ch !== "~") continue;
     const n = runLength(s, j, ch);
     const end = j + n; // a closer sits at the end of its run: "**a *b***"
-    const fits = ch === "*" ? (delim.length === 1 ? n === 1 || n === 3 : delim.length === 2 ? n === 2 || n === 3 : n === 3) : n === delim.length;
-    if (fits && j > from && !isSpace(s[j - 1]) && !(ch === "_" && isWord(s[end]))) return end - delim.length;
+    if (!isSpace(s[j - 1]) && !(ch === "_" && isWord(s[end]))) {
+      for (const [delim] of DELIMS) {
+        if (delim[0] === ch && fits(delim, n)) found.get(delim)!.push([j, end - delim.length]);
+      }
+    }
     j = end - 1;
   }
-  return -1;
+  return found;
 }
 
 const DELIMS: [string, Mark[]][] = [
@@ -98,6 +111,19 @@ export function parseInline(s: string, marks: Mark[] = []): Run[] {
     text = "";
   };
 
+  // Where a `delim` opened just before `from` closes, or -1. Openers only move forward,
+  // so each delimiter's list is walked once.
+  let closers: Map<string, [number, number][]> | undefined;
+  const seen = new Map<string, number>();
+  const closeAfter = (from: number, delim: string): number => {
+    closers ??= findClosers(s);
+    const list = closers.get(delim)!;
+    let k = seen.get(delim) ?? 0;
+    while (k < list.length && list[k][0] <= from) k++;
+    seen.set(delim, k);
+    return k < list.length ? list[k][1] : -1;
+  };
+
   for (let i = 0; i < s.length; i++) {
     const c = s[i];
     if (c === "\\" && ESCAPABLE.includes(s[i + 1] ?? "")) {
@@ -112,7 +138,7 @@ export function parseInline(s: string, marks: Mark[] = []): Run[] {
         if (c !== "*" && delim.length !== run) continue; // "____" is a blank to fill in, not markup
         const inner = i + delim.length;
         if (isSpace(s[inner]) || (c !== "~" && isWord(s[i - 1]))) continue;
-        const close = findCloser(s, inner, delim);
+        const close = closeAfter(inner, delim);
         if (close < 0) continue;
         flush();
         runs.push(...parseInline(s.slice(inner, close), sortMarks([...marks, ...add])));
