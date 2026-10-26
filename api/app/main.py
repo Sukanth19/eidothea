@@ -8,7 +8,7 @@ from typing import Annotated, Literal
 from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
-from . import accounts, db, guard, insights, reading, social
+from . import accounts, db, guard, insights, mail, reading, social
 from .notify import notify
 from .accounts import MemberUser, ReaderUser, grant_membership, user_json
 from .deps import Conn, CurrentUser, ModUser, OptionalUser
@@ -21,6 +21,8 @@ WORDS_PER_MINUTE = 200
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     db.init()
+    if not mail.READY:
+        mail.log.warning("SMTP_HOST is not set: emails will be printed here instead of sent (see the README)")
     yield
 
 

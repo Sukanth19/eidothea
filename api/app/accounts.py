@@ -55,6 +55,7 @@ def user_json(u, *, private: bool = False) -> dict:
     }
     if private:
         out["email"] = u["email"]
+        out["mail_ready"] = mail.READY
     return out
 
 
@@ -325,7 +326,7 @@ def resend(user: CurrentUser, conn: Conn, tasks: BackgroundTasks):
     if not email or (user["email_verified_at"] and not pending):
         raise HTTPException(400, "There's nothing waiting to be confirmed.")
     send_verification(conn, user, email, tasks)
-    return {"ok": True, "email": email}
+    return {"ok": True, "email": email, "mail_ready": mail.READY}
 
 
 @router.put("/api/me/email")
@@ -339,7 +340,7 @@ def change_email(body: EmailIn, user: CurrentUser, conn: Conn, tasks: Background
         conn.execute("UPDATE users SET email = ? WHERE id = ?", (body.email, user["id"]))
         conn.commit()
     send_verification(conn, user, body.email, tasks)
-    return {"ok": True, "email": body.email}
+    return {"ok": True, "email": body.email, "mail_ready": mail.READY}
 
 
 # --------------------------------------------------------------------------- passwords

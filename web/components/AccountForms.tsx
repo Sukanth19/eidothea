@@ -8,6 +8,8 @@ import type { User } from "@/lib/types";
 
 type Msg = { ok: boolean; text: string } | null;
 
+const NO_MAIL = "Email isn't set up on this server yet, so nothing was sent. The site's admin needs to add the email settings.";
+
 function errorText(e: unknown) {
   return e instanceof Error ? e.message : String(e);
 }
@@ -24,8 +26,8 @@ export function ResendButton({ label = "SEND THE LINK AGAIN" }: { label?: string
   async function resend() {
     setBusy(true);
     try {
-      const r = await api<{ email: string }>("/api/auth/resend", { method: "POST" });
-      setMsg({ ok: true, text: `Sent to ${r.email}` });
+      const r = await api<{ email: string; mail_ready: boolean }>("/api/auth/resend", { method: "POST" });
+      setMsg(r.mail_ready ? { ok: true, text: `Sent to ${r.email}` } : { ok: false, text: NO_MAIL });
     } catch (e) {
       setMsg({ ok: false, text: errorText(e) });
     }
@@ -88,6 +90,7 @@ export function VerifyEmail({ user }: { user: User | null }) {
   if (user.email_verified) return <p className="msg ok">YOUR EMAIL IS ALREADY CONFIRMED.</p>;
   return (
     <>
+      {user.mail_ready === false && <p className="msg error">✕ {NO_MAIL.toUpperCase()}</p>}
       <p>We sent a link to <b>{user.email ?? "your email"}</b>. Open it to confirm the address, then come back.</p>
       <p className="hint">Nothing there? Check spam, or send it again.</p>
       <div className="actions"><ResendButton /></div>
@@ -168,8 +171,8 @@ export function EmailSettings({ user }: { user: User }) {
     e.preventDefault();
     setBusy(true);
     try {
-      const r = await api<{ email: string }>("/api/me/email", { method: "PUT", body: { email } });
-      setMsg({ ok: true, text: `Link sent to ${r.email}. The change happens once you open it.` });
+      const r = await api<{ email: string; mail_ready: boolean }>("/api/me/email", { method: "PUT", body: { email } });
+      setMsg(r.mail_ready ? { ok: true, text: `Link sent to ${r.email}. The change happens once you open it.` } : { ok: false, text: NO_MAIL });
     } catch (err) {
       setMsg({ ok: false, text: errorText(err) });
     }

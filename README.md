@@ -156,6 +156,12 @@ Users who sign up start as **User**. Promote them on the **Control** page (`/adm
   ```
   A Gmail address with an app password sends about 500 emails a day, which is plenty to start. With your own domain, a provider like Resend or Brevo is less likely to land in spam.
 
+  **Check it works** by sending yourself a test email. It prints the exact error if something's wrong (a bad app password, a blocked port…):
+  ```sh
+  sudo bash -c 'set -a; . /etc/eidothea.env; cd /opt/eidothea/api && .venv/bin/python send_test_email.py you@example.com'
+  ```
+  Until email is set up, the site tells people that nothing was sent, and the API prints each email to its log (`journalctl -u eidothea-api`), links included.
+
 Removing an account also deletes that account's stories.
 
 ### Data notes

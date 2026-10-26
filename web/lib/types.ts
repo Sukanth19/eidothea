@@ -22,6 +22,8 @@ export interface User {
   email_verified: boolean;
   /** Only on the logged-in user's own record */
   email?: string | null;
+  /** False when the server has no email account set up, so nothing is actually sent */
+  mail_ready?: boolean;
   /** Unread notifications, on the logged-in user's own record */
   unread?: number;
 }
