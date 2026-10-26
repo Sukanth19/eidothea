@@ -48,7 +48,9 @@ id "$APP_USER" >/dev/null 2>&1 || useradd --system --home "$APP_DIR" --shell /us
 chown -R "$APP_USER:$APP_USER" "$APP_DIR"
 
 step "Build"
-sudo -u "$APP_USER" -H bash "$APP_DIR/deploy/build.sh"
+# NEXT_PUBLIC_* settings are baked into the website when it's built
+BUILD_ENV=$(grep -s '^NEXT_PUBLIC_' /etc/eidothea.env || true)
+sudo -u "$APP_USER" -H env $BUILD_ENV bash "$APP_DIR/deploy/build.sh"
 
 step "Database (first run downloads and imports ~3,500 stories)"
 if [ ! -f "$APP_DIR/data/archive.db" ]; then
@@ -59,14 +61,17 @@ fi
 
 step "Services"
 if [ -n "$DOMAIN" ]; then SITE="$DOMAIN"; SECURE=1; else SITE=":80"; SECURE=0; fi
-# Keep settings added by hand (the Discord sign-up webhook) when this runs again
-WEBHOOK=$(grep -s '^SIGNUP_WEBHOOK_URL=' /etc/eidothea.env || true)
+# Keep settings added by hand (email, the Discord webhook, …) when this runs again
+KEEP=$(grep -sv -e '^COOKIE_SECURE=' -e '^NEXT_TELEMETRY_DISABLED=' /etc/eidothea.env || true)
+if [ -n "$DOMAIN" ]; then KEEP=$(printf '%s\n' "$KEEP" | grep -v '^SITE_URL=' || true); fi
 cat > /etc/eidothea.env <<EOF
 COOKIE_SECURE=$SECURE
 NEXT_TELEMETRY_DISABLED=1
 EOF
-if [ -n "$WEBHOOK" ]; then echo "$WEBHOOK" >> /etc/eidothea.env; fi
-chmod 600 /etc/eidothea.env  # the webhook URL works like a password
+# Links in emails need the site's address
+if [ -n "$DOMAIN" ]; then echo "SITE_URL=https://$DOMAIN" >> /etc/eidothea.env; fi
+if [ -n "$KEEP" ]; then printf '%s\n' "$KEEP" >> /etc/eidothea.env; fi
+chmod 600 /etc/eidothea.env  # holds the email password and the webhook URL
 install -m 0644 "$APP_DIR/deploy/eidothea-api.service" "$APP_DIR/deploy/eidothea-web.service" /etc/systemd/system/
 sed "s|{\$SITE}|$SITE|" "$APP_DIR/deploy/Caddyfile" > /etc/caddy/Caddyfile
 install -m 0755 "$APP_DIR/deploy/backup.sh" /etc/cron.daily/eidothea-backup

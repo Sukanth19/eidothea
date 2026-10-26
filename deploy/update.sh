@@ -5,7 +5,9 @@ set -euo pipefail
 cd /opt/eidothea
 
 sudo -u eidothea git pull --ff-only
-sudo -u eidothea -H bash deploy/build.sh
+# NEXT_PUBLIC_* settings are baked into the website when it's built
+BUILD_ENV=$(grep -s '^NEXT_PUBLIC_' /etc/eidothea.env || true)
+sudo -u eidothea -H env $BUILD_ENV bash deploy/build.sh
 # Pick up any changes to the service files
 install -m 0644 deploy/eidothea-api.service deploy/eidothea-web.service /etc/systemd/system/
 systemctl daemon-reload

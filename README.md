@@ -140,6 +140,22 @@ It asks for a password. Only one Overseer can exist, and the website can't creat
 
 Users who sign up start as **User**. Promote them on the **Control** page (`/admin`).
 
+### Accounts and membership
+
+- **Who can do what:** anyone can read. Signing up needs an email address, confirmed through a link. A confirmed account is a **reader**: they can read and follow writers. **Members** can also write, comment, rate and vote. Moderators and up always can.
+- **Becoming a member:** the first 300 people to confirm their email are founding members (`FOUNDING_MEMBERS`). After that: an invite link from a member (3 each, `INVITES_PER_MEMBER`; moderators and up have no limit), or the waiting list at `/membership`, which moderators work through at `/mod`. Admins can also tick *Can post* for anyone on `/admin`. Accounts made before membership existed became members automatically.
+- **Spam protection:** rate limits on sign-up, log-in, password resets and invite codes; a hidden form field and a minimum fill-in time on sign-up; throwaway email domains are refused; members in their first week can publish 3 stories and 30 comments a day (10 and 200 after). Optionally, Cloudflare Turnstile on sign-up: set `TURNSTILE_SECRET` for the API and `NEXT_PUBLIC_TURNSTILE_SITE_KEY` for the website (the website reads it when it's built, so run `update.sh` after adding it).
+- **Email:** without settings, emails are printed in the API's output (handy locally: copy the link from there). On the server, add these to `/etc/eidothea.env` and run `sudo systemctl restart eidothea-api`:
+  ```sh
+  SMTP_HOST=smtp.gmail.com          # or your provider's (Resend, Brevo, Mailgun…)
+  SMTP_PORT=587                     # 465 also works
+  SMTP_USER=you@gmail.com
+  SMTP_PASSWORD=<app password>      # Gmail: Google Account → Security → App passwords
+  MAIL_FROM=Eidothea <you@gmail.com>
+  SITE_URL=https://your.domain      # setup.sh fills this in when given a domain
+  ```
+  A Gmail address with an app password sends about 500 emails a day, which is plenty to start. With your own domain, a provider like Resend or Brevo is less likely to land in spam.
+
 Removing an account also deletes that account's stories.
 
 ### Data notes
@@ -156,7 +172,8 @@ Removing an account also deletes that account's stories.
 - **Sharing:** every story has a share panel. On phones, *Share to story* hands a 1080×1920 card (`/stories/<id>/card`) to the phone's share menu, so Instagram or Snapchat open it in their story editor and the reader decides whether to post. Pasted links get a preview image too (`opengraph-image`). The card fonts live in `web/assets/fonts`.
 - **Insights** (`/insights`): visitors per day, most-read stories, where visitors come from (share-link tags like `?ref=instagram`, or the referring site), devices, how members heard about the site, new sign-ups, and a file for every member. Only the Overseer and members they grant access to (from a member's file) can open it. Visits are counted without cookies or stored IP addresses: each visitor is a hash salted with a secret that is replaced daily. What's collected is listed at `/privacy`.
 - **Profiles:** members can add a display name, bio and Instagram handle (*My stories → Edit profile*). Profiles are private to the Overseer and insights viewers unless the member makes theirs public at `/u/<username>`.
-- **Sign-up alerts:** to get a Discord message when someone joins, create a webhook (Discord channel → *Edit channel → Integrations → Webhooks*), add `SIGNUP_WEBHOOK_URL=<the webhook url>` to `/etc/eidothea.env` on the server, and run `sudo systemctl restart eidothea-api`. `setup.sh` keeps that line when re-run.
+- **Sign-up alerts:** to get a Discord message when someone joins, create a webhook (Discord channel → *Edit channel → Integrations → Webhooks*), add `SIGNUP_WEBHOOK_URL=<the webhook url>` to `/etc/eidothea.env` on the server, and run `sudo systemctl restart eidothea-api`. `setup.sh` keeps settings you add by hand when re-run.
+- **Genres:** writers pick from the genres on `/mod` (moderators add and remove them) plus the dataset's own categories.
 - **Upgrading:** new columns and tables are added to an existing `archive.db` when the API starts. Nothing needs to be run by hand.
 
 ### Deploy to Azure (free with Azure for Students)
