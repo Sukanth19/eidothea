@@ -465,6 +465,13 @@ tr.you td:first-child { color: var(--amber); }
   .writer-bottom > span { font-size: 1rem; }
 }
 
+/* Touch screens keep :hover after a tap, which left buttons stuck "filled" */
+@media (hover: none) {
+  .btn:hover, button:hover { background: transparent; color: var(--green); box-shadow: none; }
+  .btn.ghost:hover, button.ghost:hover { color: var(--text); }
+  .btn.danger:hover, button.danger:hover { color: var(--red); }
+}
+
 /* Touch screens: fingers need bigger targets than cursors */
 @media (pointer: coarse) {
   /* iOS zooms into any field under 16px when it's tapped */
