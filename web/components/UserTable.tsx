@@ -35,7 +35,7 @@ export function UserTable({ users, assignable, meId }: { users: ManagedUser[]; a
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>Operator</th><th>Role</th><th>Stories</th><th>Joined</th><th></th></tr>
+            <tr><th>Member</th><th>Role</th><th>Can post</th><th>Stories</th><th>Joined</th><th></th></tr>
           </thead>
           <tbody>
             <AnimatePresence initial={false}>
@@ -56,6 +56,24 @@ export function UserTable({ users, assignable, meId }: { users: ManagedUser[]; a
                       </select>
                     ) : (
                       <span className={`role ${u.role}`}>{ROLE_LABEL[u.role].toUpperCase()}</span>
+                    )}
+                  </td>
+                  <td>
+                    {u.role !== "user" ? (
+                      <span className="muted">staff</span>
+                    ) : (
+                      <label className="check" style={{ margin: 0 }}>
+                        <input
+                          type="checkbox"
+                          checked={u.member}
+                          disabled={!u.can_manage}
+                          onChange={e => run(
+                            () => api(`/api/users/${u.id}/membership`, { method: "PATCH", body: { member: e.target.checked } }),
+                            `${u.username} ${e.target.checked ? "is now a member" : "is a reader again"}`,
+                          )}
+                        />
+                        {u.member ? "member" : u.email_verified ? "reader" : "unconfirmed"}
+                      </label>
                     )}
                   </td>
                   <td>{u.story_count}</td>

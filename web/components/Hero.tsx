@@ -12,7 +12,7 @@ const LINES = [
   "If you hear knocking, do not knock back.",
 ];
 
-export function Hero({ loggedIn }: { loggedIn: boolean }) {
+export function Hero({ member, loggedIn }: { member: boolean; loggedIn: boolean }) {
   return (
     <Whisper className="hero" message={<>IT KNOWS<br />YOU&apos;RE READING</>}>
       <div className="kicker rise" style={{ "--i": 4 } as React.CSSProperties}>
@@ -25,8 +25,8 @@ export function Hero({ loggedIn }: { loggedIn: boolean }) {
       <div className="actions rise" style={{ "--i": 12 } as React.CSSProperties}>
         <Link href="/stories" className="btn">ENTER THE ARCHIVE</Link>
         <Link href="/random" className="btn ghost" prefetch={false}>READ SOMETHING RANDOM</Link>
-        <Link href={loggedIn ? "/stories/new" : "/register"} className="btn danger">
-          {loggedIn ? "SUBMIT A STORY" : "JOIN AND WRITE"}
+        <Link href={member ? "/stories/new" : loggedIn ? "/membership" : "/register"} className="btn danger">
+          {member ? "SUBMIT A STORY" : loggedIn ? "BECOME A MEMBER" : "JOIN AND WRITE"}
         </Link>
       </div>
     </Whisper>

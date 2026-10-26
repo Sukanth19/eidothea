@@ -1,13 +1,13 @@
 "use client";
 
 import { AnimatePresence, motion } from "motion/react";
-import Link from "next/link";
 import { useState } from "react";
 import { api } from "@/lib/client-api";
 import { formatDate } from "@/lib/format";
 import { ROLE_LABEL, ROLE_LEVEL, type Comment, type User } from "@/lib/types";
 import { Icon } from "./Icon";
 import { Markup } from "./Markup";
+import { MembersOnly } from "./MembersOnly";
 
 type Sort = "top" | "new";
 
@@ -77,7 +77,7 @@ export function Comments({ storyId, initial, user }: { storyId: number; initial:
         </div>
       </div>
 
-      {user ? (
+      {user?.member ? (
         <form className="comment-form" onSubmit={post}>
           <textarea value={body} onChange={e => setBody(e.target.value)} maxLength={5000} rows={3} placeholder="What did you make of it?" aria-label="Your comment" required />
           <div className="comment-form-foot">
@@ -86,7 +86,7 @@ export function Comments({ storyId, initial, user }: { storyId: number; initial:
           </div>
         </form>
       ) : (
-        <p className="hint"><Link href={`/login?next=/stories/${storyId}`}>Log in</Link> to join the discussion.</p>
+        <MembersOnly user={user} what="join the discussion" next={`/stories/${storyId}`} />
       )}
 
       {error && <p className="msg error" role="alert">✕ {error}</p>}
@@ -105,10 +105,10 @@ export function Comments({ storyId, initial, user }: { storyId: number; initial:
                 </div>
                 <div className="comment-body"><Markup text={c.body} /></div>
                 <div className="comment-actions">
-                  <button type="button" className={`vote${c.my_vote === 1 ? " on" : ""}`} onClick={() => vote(c, 1)} disabled={!user} aria-pressed={c.my_vote === 1} aria-label="Like">
+                  <button type="button" className={`vote${c.my_vote === 1 ? " on" : ""}`} onClick={() => vote(c, 1)} disabled={!user?.member} aria-pressed={c.my_vote === 1} aria-label="Like">
                     <Icon name="up" size={15} /> {c.likes}
                   </button>
-                  <button type="button" className={`vote down${c.my_vote === -1 ? " on" : ""}`} onClick={() => vote(c, -1)} disabled={!user} aria-pressed={c.my_vote === -1} aria-label="Dislike">
+                  <button type="button" className={`vote down${c.my_vote === -1 ? " on" : ""}`} onClick={() => vote(c, -1)} disabled={!user?.member} aria-pressed={c.my_vote === -1} aria-label="Dislike">
                     <Icon name="down" size={15} /> {c.dislikes}
                   </button>
                   {c.can_delete && <button type="button" className="link-btn" onClick={() => remove(c)}>[delete]</button>}

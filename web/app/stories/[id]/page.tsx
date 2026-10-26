@@ -130,7 +130,7 @@ export default async function StoryPage({ params, searchParams }: Props) {
           <RateStory
             storyId={story.id}
             initial={{ rating: story.rating, rating_count: story.rating_count, my_rating: story.my_rating ?? null }}
-            blocked={!user ? "login" : ownStory ? "own" : undefined}
+            blocked={!user ? "login" : !user.member ? "member" : ownStory ? "own" : undefined}
           />
           <div className="actions" style={{ justifyContent: "center", marginTop: "2.5rem" }}>
             <ShareStory storyId={story.id} title={story.title} label="SHARE THIS STORY" />

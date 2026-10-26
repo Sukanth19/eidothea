@@ -18,7 +18,9 @@ export function Nav({ user }: { user: User | null }) {
 
   const links = [{ href: "/stories", label: "ARCHIVE" }];
   if (user) {
-    links.push({ href: "/stories/new", label: "WRITE" }, { href: "/me", label: "MY STORIES" });
+    if (user.member) links.push({ href: "/stories/new", label: "WRITE" }, { href: "/me", label: "MY STORIES" });
+    else links.push({ href: "/membership", label: "BECOME A MEMBER" });
+    if (ROLE_LEVEL[user.role] >= ROLE_LEVEL.mod) links.push({ href: "/mod", label: "KEEPERS" });
     if (ROLE_LEVEL[user.role] >= ROLE_LEVEL.admin) links.push({ href: "/admin", label: "CONTROL" });
     if (user.insights) links.push({ href: "/insights", label: "INSIGHTS" });
   }
@@ -55,7 +57,7 @@ export function Nav({ user }: { user: User | null }) {
           {user ? (
             <>
               <span className="whoami">
-                <b>{ROLE_LABEL[user.role].toUpperCase()}</b> {user.username}
+                <b>{user.role !== "user" ? ROLE_LABEL[user.role].toUpperCase() : user.tier === "unverified" ? "UNCONFIRMED" : user.tier.toUpperCase()}</b> {user.username}
               </span>
               <button type="button" className="link-btn" onClick={logout}>
                 [LOG OUT]

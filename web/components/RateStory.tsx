@@ -6,7 +6,7 @@ import { api } from "@/lib/client-api";
 import type { RatingState } from "@/lib/types";
 
 /** 1-10 rating scale under a story. `blocked` explains why this reader can't rate. */
-export function RateStory({ storyId, initial, blocked }: { storyId: number; initial: RatingState; blocked?: "login" | "own" }) {
+export function RateStory({ storyId, initial, blocked }: { storyId: number; initial: RatingState; blocked?: "login" | "member" | "own" }) {
   const [state, setState] = useState(initial);
   const [hover, setHover] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -39,6 +39,8 @@ export function RateStory({ storyId, initial, blocked }: { storyId: number; init
 
       {blocked === "login" ? (
         <p className="hint"><Link href={`/login?next=/stories/${storyId}`}>Log in</Link> to rate it out of 10.</p>
+      ) : blocked === "member" ? (
+        <p className="hint">Only members can rate. <Link href="/membership">Get an invite or join the waiting list</Link>.</p>
       ) : blocked === "own" ? (
         <p className="hint">You can&apos;t rate your own story.</p>
       ) : (

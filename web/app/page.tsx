@@ -16,7 +16,7 @@ export default async function Home() {
 
   return (
     <>
-      <Hero loggedIn={!!user} />
+      <Hero member={!!user?.member} loggedIn={!!user} />
 
       {stats && (
         <div className="stats">
