@@ -158,7 +158,7 @@ Users who sign up start as **User**. Promote them on the **Control** page (`/adm
 
   **Check it works** by sending yourself a test email. It prints the exact error if something's wrong (a bad app password, a blocked port…):
   ```sh
-  sudo bash -c 'set -a; . /etc/eidothea.env; cd /opt/eidothea/api && .venv/bin/python send_test_email.py you@example.com'
+  sudo /opt/eidothea/api/.venv/bin/python /opt/eidothea/api/send_test_email.py --env /etc/eidothea.env you@example.com
   ```
   Until email is set up, the site tells people that nothing was sent, and the API prints each email to its log (`journalctl -u eidothea-api`), links included.
 
