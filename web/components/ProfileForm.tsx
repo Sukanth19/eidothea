@@ -48,6 +48,13 @@ export function ProfileForm({ initial }: { initial: Profile }) {
           </span>
         </span>
       </label>
+      <label className="check">
+        <input type="checkbox" checked={!!p.email_follows} onChange={e => setP({ ...p, email_follows: e.target.checked })} />
+        <span>
+          Email me when someone I follow publishes
+          <span className="hint">You&apos;ll always see it under the bell; this adds an email too.</span>
+        </span>
+      </label>
       {msg && <p className={`msg ${msg.ok ? "ok" : "error"}`} role="status">{msg.ok ? "✓" : "✕"} {msg.text}</p>}
       <div className="actions">
         <button type="submit" disabled={saving}>{saving ? "SAVING…" : "SAVE PROFILE"}</button>

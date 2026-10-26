@@ -8,6 +8,7 @@ import { ROLE_LABEL, ROLE_LEVEL, type Comment, type User } from "@/lib/types";
 import { Icon } from "./Icon";
 import { Markup } from "./Markup";
 import { MembersOnly } from "./MembersOnly";
+import { Sigil } from "./Sigil";
 
 type Sort = "top" | "new";
 
@@ -99,6 +100,7 @@ export function Comments({ storyId, initial, user }: { storyId: number; initial:
             {comments.map(c => (
               <motion.li key={c.id} className="comment" layout initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, height: 0 }}>
                 <div className="comment-head">
+                  <Sigil name={c.author} size={22} />
                   <b>{c.author}</b>
                   {ROLE_LEVEL[c.author_role] > 0 && <span className={`role ${c.author_role}`}>{ROLE_LABEL[c.author_role].toUpperCase()}</span>}
                   <span className="muted">{formatDate(c.created_at)}</span>

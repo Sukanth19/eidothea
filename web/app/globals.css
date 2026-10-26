@@ -575,3 +575,23 @@ tr.you td:first-child { color: var(--amber); }
 .banner b { color: var(--text); font-weight: 400; }
 .banner .msg { margin: 0; }
 .banner button { font-size: .85rem; padding: .05rem .7rem; }
+
+/* ---------- Sigils, follows & notifications ---------- */
+.sigil { flex: none; color: var(--amber); }
+.profile-top { display: flex; align-items: center; gap: 1.2rem; margin-bottom: .6rem; }
+.profile-sigil { filter: drop-shadow(0 0 10px rgba(224, 57, 43, .25)); }
+.byline { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem .8rem; margin: 0 0 1rem; }
+.follow { display: inline-flex; flex-wrap: wrap; align-items: center; gap: .6rem; }
+.follow-btn { font-size: .9rem; padding: .1rem .9rem; }
+.comment-head .sigil { align-self: center; }
+
+.bell { position: relative; display: inline-flex; align-items: center; color: var(--text); padding: 0 .2rem; }
+.bell:hover, .bell.active { color: var(--blood); text-decoration: none; }
+.bell-count { position: absolute; top: -.45rem; right: -.6rem; min-width: 1.15rem; padding: 0 .25rem; border-radius: 999px; background: var(--red); color: #fff; font-family: var(--body); font-size: .7rem; line-height: 1.15rem; text-align: center; box-shadow: 0 0 8px rgba(224, 57, 43, .6); }
+
+.notes { list-style: none; padding: 0; margin: 0; }
+.notes li { display: flex; align-items: center; gap: .8rem; padding: .7rem 0; border-bottom: 1px dashed var(--line); }
+.notes li.unread { background: linear-gradient(90deg, rgba(224, 57, 43, .07), transparent 60%); }
+.notes .note-text { flex: 1; min-width: 0; }
+.notes .sigil-gap { width: 30px; flex: none; }
+.notes .caps { font-size: .85rem; white-space: nowrap; }

@@ -22,6 +22,25 @@ export interface User {
   email_verified: boolean;
   /** Only on the logged-in user's own record */
   email?: string | null;
+  /** Unread notifications, on the logged-in user's own record */
+  unread?: number;
+}
+
+export interface SocialInfo {
+  followers: number;
+  following: number;
+  is_following: boolean;
+  recommends: number;
+}
+
+export interface Notification {
+  id: number;
+  kind: "follow" | "story" | "comment" | "recommend" | "invite_used" | "member" | "rejected";
+  created_at: string;
+  read: boolean;
+  story_id: number | null;
+  actor: string | null;
+  story_title: string | null;
 }
 
 export interface InviteList {
@@ -59,6 +78,7 @@ interface StoryBase {
   archive_rating: number | null;
   rating_count: number;
   comment_count: number;
+  recommend_count: number;
   reading_minutes: number;
   source: "user" | "import";
   truncated: boolean;
@@ -75,6 +95,7 @@ export interface StorySummary extends StoryBase {
 export interface Story extends StoryBase {
   body: string;
   my_rating?: number | null;
+  recommended?: boolean;
 }
 
 export interface RatingState {
@@ -139,7 +160,10 @@ export interface Profile {
   bio: string;
   instagram: string;
   profile_public: boolean;
+  member: boolean;
   story_count?: number;
+  /** Own profile only: email me when someone I follow publishes */
+  email_follows?: boolean;
 }
 
 export interface InsightWindow {

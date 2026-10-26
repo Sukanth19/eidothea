@@ -8,10 +8,12 @@ import { ShareStory } from "@/components/ShareStory";
 import { Reader } from "@/components/Reader";
 import { ScrambleText } from "@/components/ScrambleText";
 import { Rating } from "@/components/StoryCard";
+import { Sigil } from "@/components/Sigil";
+import { FollowButton, RecommendButton } from "@/components/Social";
 import { Whisper } from "@/components/Whisper";
 import { excerpt, formatDate } from "@/lib/format";
 import { apiGet, currentUser } from "@/lib/server-api";
-import type { Comment, Story } from "@/lib/types";
+import type { Comment, SocialInfo, Story } from "@/lib/types";
 
 // Scrawled behind the end of each story, found only by the cursor's light
 const ENDINGS = ["IT READ THIS TOO", "YOU WEREN'T READING ALONE", "DON'T LOOK BEHIND YOU", "IT FOLLOWED YOU HERE", "NOW IT KNOWS YOUR NAME"];
@@ -43,7 +45,11 @@ export default async function StoryPage({ params, searchParams }: Props) {
 
   const ownStory = !!user && story.author_id === user.id;
   const draft = story.status === "draft";
-  const comments = draft ? [] : ((await apiGet<Comment[]>(`/api/stories/${story.id}/comments`)) ?? []);
+  const [comments, social] = await Promise.all([
+    draft ? [] : apiGet<Comment[]>(`/api/stories/${story.id}/comments`).then(c => c ?? []),
+    // Community authors can be followed; imported stories have no account behind them
+    story.author_id && story.author ? apiGet<SocialInfo>(`/api/profiles/${encodeURIComponent(story.author)}/social`) : null,
+  ]);
 
   return (
     <article className="doc">
@@ -87,6 +93,16 @@ export default async function StoryPage({ params, searchParams }: Props) {
           )}
           {story.updated_at && <span>EDITED {formatDate(story.updated_at)}</span>}
         </div>
+        {social && story.author && (
+          <div className="byline">
+            <Sigil name={story.author} size={34} />
+            <span>
+              {story.author_public ? <Link href={`/u/${encodeURIComponent(story.author)}`}>{story.author}</Link> : story.author}
+              <span className="caps muted"> · {social.followers} {social.followers === 1 ? "FOLLOWER" : "FOLLOWERS"}</span>
+            </span>
+            <FollowButton username={story.author} initial={social} user={user} />
+          </div>
+        )}
         {!draft && (
           <div className="head-share">
             <ShareStory
@@ -132,7 +148,10 @@ export default async function StoryPage({ params, searchParams }: Props) {
             initial={{ rating: story.rating, rating_count: story.rating_count, my_rating: story.my_rating ?? null }}
             blocked={!user ? "login" : !user.member ? "member" : ownStory ? "own" : undefined}
           />
-          <div className="actions" style={{ justifyContent: "center", marginTop: "2.5rem" }}>
+          <div className="actions" style={{ justifyContent: "center", marginTop: "1.5rem" }}>
+            <RecommendButton storyId={story.id} count={story.recommend_count} recommended={!!story.recommended} user={user} own={ownStory} />
+          </div>
+          <div className="actions" style={{ justifyContent: "center", marginTop: "1.5rem" }}>
             <ShareStory storyId={story.id} title={story.title} label="SHARE THIS STORY" />
             <Link href="/random" className="btn" prefetch={false}>ANOTHER ONE</Link>
           </div>

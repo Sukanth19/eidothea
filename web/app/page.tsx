@@ -14,7 +14,9 @@ export default async function Home() {
     apiGet<StoryPage>("/api/stories?source=user&per_page=3"),
     apiGet<Category[]>("/api/categories"),
   ]);
-  const forYou = user?.email_verified ? await apiGet<ForYou>("/api/stories/for-you?limit=3") : null;
+  const [forYou, followed] = user?.email_verified
+    ? await Promise.all([apiGet<ForYou>("/api/stories/for-you?limit=3"), apiGet<StoryPage>("/api/stories?following=true&per_page=3")])
+    : [null, null];
 
   return (
     <>
@@ -27,6 +29,13 @@ export default async function Home() {
           <div className="stat"><div className="n"><CountUp to={stats.users} /></div><div className="l">Souls registered</div></div>
           <div className="stat"><div className="n"><CountUp to={Math.round(stats.minutes / 60)} /></div><div className="l">Hours of reading</div></div>
         </div>
+      )}
+
+      {followed && followed.items.length > 0 && (
+        <>
+          <div className="section-head"><h2>From writers you follow</h2></div>
+          <StoryGrid stories={followed.items} />
+        </>
       )}
 
       {forYou && forYou.items.length > 0 && (

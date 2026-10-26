@@ -6,6 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/client-api";
 import { ROLE_LABEL, ROLE_LEVEL, type User } from "@/lib/types";
+import { Bell } from "./Notifications";
 import { ScrambleText } from "./ScrambleText";
 
 export function Nav({ user }: { user: User | null }) {
@@ -56,6 +57,7 @@ export function Nav({ user }: { user: User | null }) {
           ))}
           {user ? (
             <>
+              <Bell initial={user.unread ?? 0} />
               <span className="whoami">
                 <b>{user.role !== "user" ? ROLE_LABEL[user.role].toUpperCase() : user.tier === "unverified" ? "UNCONFIRMED" : user.tier.toUpperCase()}</b> {user.username}
               </span>
