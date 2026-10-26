@@ -3,9 +3,9 @@
 import { useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
 
-const GLYPHS = "█▓▒░<>/\\|_-=+*#%@!?ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+const GLYPHS = "†‡§¶ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-/** Text that decodes itself from noise on mount, and again on hover. */
+/** Text that settles out of a jumble of letters on mount, and again on hover. */
 export function ScrambleText({
   text,
   className,

@@ -30,7 +30,7 @@ export function DailyChart({ data, days }: { data: Day[]; days: number }) {
     <figure className="chart">
       <figcaption className="chart-head">
         <span>Visitors per day</span>
-        <button type="button" className="link-btn" onClick={() => setAsTable(t => !t)}>{asTable ? "[show chart]" : "[show as table]"}</button>
+        <button type="button" className="link-btn" onClick={() => setAsTable(t => !t)}>{asTable ? "show chart" : "show as table"}</button>
       </figcaption>
 
       {asTable ? (

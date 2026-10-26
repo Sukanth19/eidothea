@@ -8,7 +8,7 @@ const FX_KEY = "eidothea.fx";
 const FxContext = createContext<{ fx: boolean; toggle: () => void }>({ fx: true, toggle: () => {} });
 export const useFx = () => useContext(FxContext);
 
-/** Overlays, cursor lantern, random hiccups and the global FX switch. */
+/** Overlays, cursor candlelight, the lights failing now and then, and the global FX switch. */
 export function Atmosphere({ children }: { children: React.ReactNode }) {
   const [fx, setFx] = useState(true);
 
@@ -25,7 +25,7 @@ export function Atmosphere({ children }: { children: React.ReactNode }) {
     } catch {}
   }, [fx]);
 
-  // Lantern follows the cursor via CSS variables (no re-renders)
+  // Candlelight follows the cursor via CSS variables (no re-renders)
   useEffect(() => {
     if (!fx) return;
     const root = document.documentElement;
@@ -37,7 +37,7 @@ export function Atmosphere({ children }: { children: React.ReactNode }) {
     return () => window.removeEventListener("pointermove", move);
   }, [fx]);
 
-  // A rare, brief jolt of the whole page
+  // Now and then the lights nearly go out
   useEffect(() => {
     if (!fx) return;
     const reduced = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -46,8 +46,8 @@ export function Atmosphere({ children }: { children: React.ReactNode }) {
     const schedule = () => {
       timer = setTimeout(() => {
         if (!document.hidden) {
-          document.documentElement.classList.add("hiccup");
-          setTimeout(() => document.documentElement.classList.remove("hiccup"), 220);
+          document.documentElement.classList.add("dim");
+          setTimeout(() => document.documentElement.classList.remove("dim"), 950);
         }
         schedule();
       }, 15000 + Math.random() * 25000);
@@ -61,8 +61,9 @@ export function Atmosphere({ children }: { children: React.ReactNode }) {
       <MotionConfig reducedMotion={fx ? "user" : "always"}>
         <div className="fx-layer lantern" aria-hidden="true" />
         <div className="fx-layer static" aria-hidden="true" />
-        <div className="fx-layer scanlines" aria-hidden="true" />
+        <div className="fx-layer fog" aria-hidden="true" />
         <div className="fx-layer vignette" aria-hidden="true" />
+        <div className="fx-layer dark" aria-hidden="true" />
         {children}
       </MotionConfig>
     </FxContext.Provider>

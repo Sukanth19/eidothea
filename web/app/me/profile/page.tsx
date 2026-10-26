@@ -15,7 +15,7 @@ export default async function ProfilePage() {
 
   return (
     <>
-      <p><Link href="/me">&lt; my stories</Link></p>
+      <p><Link href="/me">← my stories</Link></p>
       <h1 className="flicker">Your profile</h1>
       <p className="muted" style={{ maxWidth: "60ch" }}>All of this is optional. Share as much or as little as you like.</p>
       <ProfileForm initial={profile} />

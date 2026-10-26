@@ -50,7 +50,7 @@ function StoryCard({ story: s }: { story: StorySummary }) {
           s.source === "user" && <span className="badge user">NEW BLOOD</span>
         )}
       </div>
-      <h3 className="glitch" data-text={title}>{title}</h3>
+      <h3 className="haunt" data-text={title}>{title}</h3>
       <div className="by">
         {draft ? `LAST SAVED ${formatDate(s.updated_at ?? s.published_at)}` : <>{s.author ?? "Unknown author"} · {formatDate(s.published_at)}</>}
         {s.comment_count > 0 && <> · {s.comment_count} {s.comment_count === 1 ? "comment" : "comments"}</>}

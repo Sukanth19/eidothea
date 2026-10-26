@@ -31,7 +31,7 @@ export function Hero({ loggedIn }: { loggedIn: boolean }) {
       </div>
 
       <div className="kicker rise" style={{ "--i": 4 } as React.CSSProperties}>
-        // TRANSMISSION RECOVERED
+        RECOVERED FROM THE STACKS
       </div>
       <h1>
         <ScrambleText text="EIDOTHEA" duration={1400} />

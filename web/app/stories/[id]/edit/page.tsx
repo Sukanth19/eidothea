@@ -21,9 +21,9 @@ export default async function EditStoryPage({ params }: { params: Promise<{ id: 
   if (!story.can_edit) {
     return (
       <div className="denied">
-        <h1 className="glitch" data-text="ACCESS DENIED">ACCESS DENIED</h1>
+        <h1 className="haunt" data-text="YOU SHOULDN'T BE HERE">YOU SHOULDN&apos;T BE HERE</h1>
         <p className="muted">You can only edit stories you wrote.</p>
-        <p><Link href={`/stories/${story.id}`}>&lt; back to the story</Link></p>
+        <p><Link href={`/stories/${story.id}`}>← back to the story</Link></p>
       </div>
     );
   }

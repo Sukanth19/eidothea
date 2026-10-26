@@ -13,9 +13,9 @@ export default async function AdminPage() {
   if (ROLE_LEVEL[user.role] < ROLE_LEVEL.admin) {
     return (
       <div className="denied">
-        <h1 className="glitch" data-text="ACCESS DENIED">ACCESS DENIED</h1>
+        <h1 className="haunt" data-text="YOU SHOULDN'T BE HERE">YOU SHOULDN&apos;T BE HERE</h1>
         <p className="muted">Admins and the Overseer only.</p>
-        <p><Link href="/stories">&lt; back to the archive</Link></p>
+        <p><Link href="/stories">← back to the archive</Link></p>
       </div>
     );
   }

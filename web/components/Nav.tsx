@@ -39,10 +39,9 @@ export function Nav({ user }: { user: User | null }) {
       <div className="wrap">
         <Link href="/" className="logo flicker">
           <ScrambleText text="EIDOTHEA" />
-          <span className="caret" aria-hidden="true" />
         </Link>
         <button type="button" className="menu-btn link-btn" onClick={() => setOpen(o => !o)} aria-expanded={open} aria-controls="main-nav">
-          {open ? "[CLOSE]" : "[MENU]"}
+          {open ? "CLOSE" : "MENU"}
         </button>
         <nav id="main-nav" className={`nav${open ? " open" : ""}`} aria-label="Main">
           {links.map(l => (

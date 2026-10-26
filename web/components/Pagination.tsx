@@ -18,14 +18,14 @@ export function Pagination({ page, pages, params }: { page: number; pages: numbe
 
   return (
     <nav className="pager" aria-label="Pages">
-      {page > 1 && <Link href={href(page - 1)}>&lt; PREV</Link>}
+      {page > 1 && <Link href={href(page - 1)}>← PREV</Link>}
       {sorted.map((n, i) => (
         <span key={n} style={{ display: "contents" }}>
           {i > 0 && n - sorted[i - 1] > 1 && <span className="gap">…</span>}
           {n === page ? <span className="current" aria-current="page">{n}</span> : <Link href={href(n)}>{n}</Link>}
         </span>
       ))}
-      {page < pages && <Link href={href(page + 1)}>NEXT &gt;</Link>}
+      {page < pages && <Link href={href(page + 1)}>NEXT →</Link>}
     </nav>
   );
 }

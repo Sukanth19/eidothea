@@ -29,7 +29,7 @@ export function Typewriter({ lines, speed = 45, hold = 2600 }: { lines: string[]
   const text = reduced ? lines[0] : lines[line].slice(0, count);
   return (
     <p className="tagline" aria-live="off">
-      &gt; {text}
+      {text}
       <span className="caret" style={{ display: "inline-block", verticalAlign: "-.15em", marginLeft: ".2rem" }} />
     </p>
   );
