@@ -153,6 +153,7 @@ Removing an account also deletes that account's stories.
 - **Drafts:** anything you start writing is saved as a private draft a moment after you stop typing (*My stories → Drafts*). Published stories only change when you press Update.
 - **Ratings:** readers rate stories 1–10. An imported story's rating from the dataset counts as 5 votes, so reader scores move it gradually. Authors can't rate their own stories.
 - **Comments:** every published story has comments with likes and dislikes. Authors and moderators can delete comments.
+- **Sharing:** every story has a share panel. On phones, *Share to story* hands a 1080×1920 card (`/stories/<id>/card`) to the phone's share menu, so Instagram or Snapchat open it in their story editor and the reader decides whether to post. Pasted links get a preview image too (`opengraph-image`). The card fonts live in `web/assets/fonts`.
 - **Upgrading:** new columns and tables are added to an existing `archive.db` when the API starts. Nothing needs to be run by hand.
 
 ### Deploy to Azure (free with Azure for Students)

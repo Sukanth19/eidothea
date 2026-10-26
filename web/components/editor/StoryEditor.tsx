@@ -223,7 +223,7 @@ export function StoryEditor({ story, categories, user }: { story?: Story; catego
     const result = await persist({ status: "published" });
     if (!result) return;
     setPanel(null);
-    router.push(`/stories/${result.id}`);
+    router.push(`/stories/${result.id}?published=1`);
     router.refresh();
   }
 

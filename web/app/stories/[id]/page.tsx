@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Comments } from "@/components/Comments";
 import { DeleteStoryButton } from "@/components/DeleteStoryButton";
 import { RateStory } from "@/components/RateStory";
+import { ShareStory } from "@/components/ShareStory";
 import { Reader } from "@/components/Reader";
 import { ScrambleText } from "@/components/ScrambleText";
 import { Rating } from "@/components/StoryCard";
@@ -11,7 +12,7 @@ import { excerpt, formatDate } from "@/lib/format";
 import { apiGet, currentUser } from "@/lib/server-api";
 import type { Comment, Story } from "@/lib/types";
 
-type Props = { params: Promise<{ id: string }> };
+type Props = { params: Promise<{ id: string }>; searchParams?: Promise<{ published?: string }> };
 
 async function load(id: string) {
   if (!/^\d+$/.test(id)) return null;
@@ -30,8 +31,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function StoryPage({ params }: Props) {
+export default async function StoryPage({ params, searchParams }: Props) {
   const [story, user] = await Promise.all([load((await params).id), currentUser()]);
+  const justPublished = (await searchParams)?.published === "1";
   if (!story) notFound();
 
   const ownStory = !!user && story.author_id === user.id;
@@ -73,6 +75,11 @@ export default async function StoryPage({ params }: Props) {
           )}
           {story.updated_at && <span>EDITED {formatDate(story.updated_at)}</span>}
         </div>
+        {!draft && (
+          <div className="head-share">
+            <ShareStory storyId={story.id} title={story.title} autoOpen={justPublished && ownStory} heading={justPublished && ownStory ? "Your story is live. Share it." : undefined} />
+          </div>
+        )}
         <div className="chips">
           {story.categories.map(c => (
             <Link key={c} href={`/stories?category=${encodeURIComponent(c)}`} className="chip">{c}</Link>
@@ -107,6 +114,7 @@ export default async function StoryPage({ params }: Props) {
             blocked={!user ? "login" : ownStory ? "own" : undefined}
           />
           <div className="actions" style={{ justifyContent: "center", marginTop: "2.5rem" }}>
+            <ShareStory storyId={story.id} title={story.title} label="SHARE THIS STORY" />
             <Link href="/random" className="btn" prefetch={false}>ANOTHER ONE</Link>
           </div>
           <Comments storyId={story.id} initial={comments} user={user} />
