@@ -284,8 +284,8 @@ def register(body: Registration, request: Request, response: Response, conn: Con
 
 @router.post("/api/auth/login")
 def login(creds: Credentials, request: Request, response: Response, conn: Conn):
+    # Per address only: a limit per account would let anyone lock someone out by failing on purpose
     guard.limit(f"login:{guard.client_ip(request)}", 10, 600)
-    guard.limit(f"login-name:{creds.username.lower()}", 10, 600)
     user = conn.execute(
         "SELECT * FROM users WHERE username = ? OR email = ? COLLATE NOCASE", (creds.username, creds.username)
     ).fetchone()
