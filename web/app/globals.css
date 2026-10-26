@@ -90,6 +90,30 @@ p { margin: 0 0 1em; }
 .nav .whoami b { color: var(--amber); font-weight: 400; }
 .menu-btn { display: none; }
 
+/* Your name opens a menu with your pages, your role's pages and log out */
+.account { position: relative; }
+.account-toggle { display: inline-flex; align-items: center; gap: .35rem; color: var(--text); }
+.account-toggle:hover .whoami, .account-toggle.active .whoami { color: var(--text); }
+.caret-down { color: var(--muted); font-size: .8rem; }
+.account-menu {
+  display: none;
+  position: absolute;
+  right: 0;
+  top: calc(100% + .7rem);
+  z-index: 60;
+  min-width: 13rem;
+  flex-direction: column;
+  background: var(--panel);
+  border: 1px solid var(--line);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, .6);
+}
+.account-menu.open { display: flex; }
+.account-group { display: flex; flex-direction: column; padding: .35rem 0; }
+.account-group + .account-group { border-top: 1px dashed var(--line); }
+.account-menu a, .account-menu .link-btn { padding: .35rem 1rem; text-align: left; color: var(--text); }
+.account-menu a:hover, .account-menu .link-btn:hover { color: var(--blood); background: transparent; box-shadow: none; }
+.account-menu a.active { color: var(--amber); }
+
 main.view { flex: 1; padding-block: 1.5rem 5rem; }
 
 .site-footer { padding-block: 1rem 1.5rem; }
@@ -570,6 +594,17 @@ tr.you td:first-child { color: var(--amber); }
   .nav.open { display: flex; }
   .nav a, .nav .whoami, .nav .link-btn { padding: .55rem 0; border-top: 1px dashed var(--line); text-align: left; }
   .nav .underline { display: none; }
+  /* In the fold-out list there's room for everything: the account menu just lies open */
+  .account-toggle { pointer-events: none; padding: .55rem 0; border-top: 1px dashed var(--line); }
+  .caret-down { display: none; }
+  .nav .account-toggle .whoami { padding: 0; border-top: 0; }
+  .account-toggle { width: 100%; }
+  .nav .bell { padding: .55rem 0; border-top: 1px dashed var(--line); }
+  .nav .bell-count { position: static; margin-left: .5rem; }
+  .account-menu { display: flex; position: static; min-width: 0; background: transparent; border: 0; box-shadow: none; }
+  .account-group { padding: 0; }
+  .account-group + .account-group { border-top: 0; }
+  .account-menu a, .account-menu .link-btn { padding: .55rem 0; border-top: 1px dashed var(--line); font-size: 1.5rem; }
 
   .hero .actions .btn { flex: 1 1 100%; justify-content: center; }
   .doc-head .meta { gap: .2rem 1rem; }
