@@ -255,6 +255,9 @@ a.chip.on:hover { color: var(--bg); }
 .warning-gate .chips { justify-content: center; margin-bottom: 1.2rem; }
 .warning-gate .check { justify-content: center; font-size: .98rem; margin: 1rem 0 0; color: var(--muted); }
 .card.draft { border-left-color: var(--muted); border-left-style: dashed; }
+/* A draft card with its delete button under it: the card gives up room instead of overflowing */
+.rise:has(> .draft-delete) { display: flex; flex-direction: column; }
+.rise:has(> .draft-delete) > .card { height: auto; flex: 1; }
 .draft-delete { margin-top: .5rem; }
 
 /* ---------- Toolbar / pagination ---------- */
