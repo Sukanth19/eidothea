@@ -31,9 +31,9 @@
 
 .vignette { background: radial-gradient(ellipse at center, transparent 45%, rgba(0, 0, 0, .72) 100%); }
 
-/* Candlelight that trails the cursor across the whole page, and wavers */
+/* A pale light that trails the cursor across the whole page, and wavers */
 .lantern {
-  background: radial-gradient(circle 280px at var(--mx, -999px) var(--my, -999px), rgba(230, 160, 80, .06), transparent 70%);
+  background: radial-gradient(circle 280px at var(--mx, -999px) var(--my, -999px), rgba(215, 200, 205, .045), transparent 70%);
   z-index: 0;
   animation: candle 3.4s infinite;
 }

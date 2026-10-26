@@ -10,7 +10,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   const svg = await QRCode.toString(`${proto}://${host}/stories/${id}?share=1&ref=qr`, {
     type: "svg",
     margin: 2,
-    color: { dark: "#0c0a0b", light: "#d9cebd" },
+    color: { dark: "#0c0a0b", light: "#d3cdcc" },
   });
   return new Response(svg, { headers: { "content-type": "image/svg+xml", "cache-control": "public, max-age=86400" } });
 }

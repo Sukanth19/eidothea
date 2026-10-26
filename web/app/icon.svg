@@ -5,16 +5,16 @@
       <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
     <radialGradient id="candle" cx="50%" cy="50%" r="50%">
-      <stop offset="0" stop-color="#d6a55c" stop-opacity=".22"/>
-      <stop offset="1" stop-color="#d6a55c" stop-opacity="0"/>
+      <stop offset="0" stop-color="#c4493b" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#c4493b" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect x="2" y="2" width="60" height="60" rx="13" fill="#0c0a0b" stroke="#2f2629" stroke-width="2"/>
   <circle cx="32" cy="31" r="26" fill="url(#candle)"/>
   <!-- The eye that watches the archive, and the tear it sheds -->
   <g filter="url(#glow)">
-    <path d="M8 30 Q32 9 56 30 Q32 51 8 30 Z" fill="none" stroke="#d9cebd" stroke-width="3.5" stroke-linejoin="round"/>
-    <circle cx="32" cy="30" r="10" fill="#d6a55c"/>
+    <path d="M8 30 Q32 9 56 30 Q32 51 8 30 Z" fill="none" stroke="#e4dcd7" stroke-width="3.5" stroke-linejoin="round"/>
+    <circle cx="32" cy="30" r="10" fill="#b0927a"/>
     <ellipse cx="32" cy="30" rx="3" ry="8.5" fill="#c4493b"/>
     <ellipse cx="32" cy="30" rx="1.2" ry="6" fill="#0c0a0b"/>
     <path d="M32 46 Q35.5 52 32 55.5 Q28.5 52 32 46 Z" fill="#c4493b"/>
