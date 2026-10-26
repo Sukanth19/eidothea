@@ -11,10 +11,13 @@ import { Sigil } from "./Sigil";
 function Text({ n }: { n: Notification }) {
   const who = n.actor ? <Link href={`/u/${encodeURIComponent(n.actor)}`}><b>{n.actor}</b></Link> : <b>Someone</b>;
   const story = n.story_id ? <Link href={`/stories/${n.story_id}`}>{n.story_title || "your story"}</Link> : null;
+  const there = n.story_id ? <Link href={`/stories/${n.story_id}${n.comment_id ? `#c${n.comment_id}` : ""}`}>{n.story_title || "a story"}</Link> : null;
   switch (n.kind) {
     case "follow": return <>{who} started following you.</>;
     case "story": return <>{who} published {story}.</>;
-    case "comment": return <>{who} commented on {story}.</>;
+    case "comment": return <>{who} commented on {there}.</>;
+    case "reply": return <>{who} replied to you on {there}.</>;
+    case "mention": return <>{who} mentioned you on {there}.</>;
     case "recommend": return <>{who} recommended {story}.</>;
     case "invite_used": return <>{who} joined with your invite.</>;
     case "member": return <>You&apos;re a member now. You can <Link href="/stories/new">write</Link>, comment and rate.</>;

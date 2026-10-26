@@ -162,7 +162,7 @@ CREATE TABLE IF NOT EXISTS bookmarks (
 
 CREATE INDEX IF NOT EXISTS bookmarks_story ON bookmarks(story_id);
 
--- The bell in the nav. kind: follow, story, comment, recommend, invite_used, member, rejected
+-- The bell in the nav. kind: see notify.KINDS
 CREATE TABLE IF NOT EXISTS notifications (
     id         INTEGER PRIMARY KEY,
     user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -217,6 +217,12 @@ MIGRATIONS = {
         "status": "TEXT NOT NULL DEFAULT 'published' CHECK (status IN ('draft', 'published'))",
         "announced_at": "TEXT",  # first went live; set once, so republishing doesn't count as new
         "warnings": "TEXT NOT NULL DEFAULT '[]'",  # JSON array of content warnings, see main.ContentWarning
+    },
+    "comments": {
+        "parent_id": "INTEGER REFERENCES comments(id) ON DELETE CASCADE",  # a reply; always to a top-level comment
+    },
+    "notifications": {
+        "comment_id": "INTEGER REFERENCES comments(id) ON DELETE CASCADE",  # for replies and mentions
     },
 }
 

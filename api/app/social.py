@@ -162,7 +162,7 @@ def unbookmark(story_id: int, conn: Conn, user: CurrentUser):
 @router.get("/api/notifications")
 def notifications(conn: Conn, user: CurrentUser):
     rows = conn.execute(
-        """SELECT n.id, n.kind, n.created_at, n.read_at IS NOT NULL AS read, n.story_id,
+        """SELECT n.id, n.kind, n.created_at, n.read_at IS NOT NULL AS read, n.story_id, n.comment_id,
                   a.username AS actor, s.title AS story_title
            FROM notifications n
            LEFT JOIN users a ON a.id = n.actor_id

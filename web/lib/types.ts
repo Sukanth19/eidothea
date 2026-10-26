@@ -52,10 +52,11 @@ export interface SocialInfo {
 
 export interface Notification {
   id: number;
-  kind: "follow" | "story" | "comment" | "recommend" | "invite_used" | "member" | "rejected";
+  kind: "follow" | "story" | "comment" | "reply" | "mention" | "recommend" | "invite_used" | "member" | "rejected";
   created_at: string;
   read: boolean;
   story_id: number | null;
+  comment_id: number | null;
   actor: string | null;
   story_title: string | null;
 }
@@ -128,6 +129,8 @@ export interface RatingState {
 
 export interface Comment {
   id: number;
+  /** Set on replies: the top-level comment whose thread it's in */
+  parent_id: number | null;
   body: string;
   created_at: string;
   author: string;

@@ -345,7 +345,7 @@ a.chip.on:hover { color: var(--bg); }
 .comment-form-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .5rem; }
 .comment-form-foot .hint { margin: 0; }
 .comment-list { list-style: none; padding: 0; margin: 1.5rem 0 0; }
-.comment { border-left: 2px solid var(--line); padding: .2rem 0 .2rem 1rem; margin-bottom: 1.4rem; overflow: hidden; }
+.comment { border-left: 2px solid var(--line); padding: .2rem 0 .2rem 1rem; overflow: hidden; }
 .comment-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .7rem; font-size: .95rem; }
 .comment-head b { color: var(--ghost); font-weight: 400; }
 .comment-head .role { font-size: 1rem; }
@@ -354,6 +354,13 @@ a.chip.on:hover { color: var(--bg); }
 .comment-body blockquote { margin: 0 0 .5em; padding: .3rem .8rem; border-left: 2px solid var(--amber); background: var(--panel); }
 .comment-body h2, .comment-body h3 { font-size: 1.05rem; margin: 0 0 .4em; }
 .comment-actions { display: flex; align-items: center; gap: .5rem; }
+.comment-head a.muted { color: var(--muted); }
+.thread { margin-bottom: 1.4rem; }
+.comment-list.nested { margin: 0; }
+.comment.reply { margin: .8rem 0 0 1.6rem; }
+.comment:target { border-left-color: var(--amber); background: linear-gradient(90deg, rgba(214, 165, 92, .08), transparent 60%); }
+.reply-form { margin: .8rem 0 0 1.6rem; }
+.mention { color: var(--amber); }
 .vote { border-color: var(--line); color: var(--muted); font-size: .88rem; padding: 0 .55rem; }
 .vote:hover { background: transparent; color: var(--amber); border-color: var(--amber); box-shadow: none; }
 .vote.on { color: var(--bg); background: var(--amber); border-color: var(--amber); }

@@ -92,6 +92,7 @@ class RatingIn(BaseModel):
 
 class CommentIn(BaseModel):
     body: str = Field(min_length=1, max_length=5000)
+    parent_id: int | None = None  # replying to this comment
 
     @field_validator("body")
     @classmethod
@@ -539,7 +540,7 @@ def unrate_story(story_id: int, conn: Conn, user: MemberUser):
 # --------------------------------------------------------------------------- comments
 
 COMMENT_SELECT = """
-    SELECT c.id, c.story_id, c.user_id, c.body, c.created_at, u.username, u.role,
+    SELECT c.id, c.story_id, c.user_id, c.parent_id, c.body, c.created_at, u.username, u.role,
            COALESCE(SUM(v.value = 1), 0) AS likes,
            COALESCE(SUM(v.value = -1), 0) AS dislikes,
            MAX(CASE WHEN v.user_id = ? THEN v.value END) AS my_vote
@@ -552,6 +553,7 @@ COMMENT_SELECT = """
 def comment_json(row, user) -> dict:
     return {
         "id": row["id"],
+        "parent_id": row["parent_id"],
         "body": row["body"],
         "created_at": row["created_at"],
         "author": row["username"],
@@ -584,15 +586,45 @@ def list_comments(story_id: int, conn: Conn, user: OptionalUser, sort: Literal["
     return [comment_json(r, user) for r in rows]
 
 
+# "@name" in a comment, but not inside an email address
+MENTION = re.compile(r"(?<![\w@])@([A-Za-z0-9_-]{3,24})")
+MAX_MENTIONS = 5
+
+
 @app.post("/api/stories/{story_id}/comments", status_code=201)
 def add_comment(story_id: int, comment: CommentIn, conn: Conn, user: MemberUser):
     story = fetch_published(conn, story_id, user)
     guard.check_daily_cap(conn, user, "comments")
+    parent = None
+    if comment.parent_id is not None:
+        parent = conn.execute(
+            "SELECT id, parent_id, user_id FROM comments WHERE id = ? AND story_id = ?", (comment.parent_id, story_id)
+        ).fetchone()
+        if not parent:
+            raise HTTPException(404, "The comment you're replying to is gone.")
+    # Threads are one level deep: a reply to a reply joins the same thread
+    root = parent and (parent["parent_id"] or parent["id"])
     cur = conn.execute(
-        "INSERT INTO comments (story_id, user_id, body) VALUES (?, ?, ?)", (story_id, user["id"], comment.body)
+        "INSERT INTO comments (story_id, user_id, parent_id, body) VALUES (?, ?, ?, ?)",
+        (story_id, user["id"], root, comment.body),
     )
-    if story["author_id"]:
-        notify(conn, story["author_id"], "comment", actor_id=user["id"], story_id=story_id)
+    # Each person hears about it once, by the most specific reason
+    told = {user["id"]}
+    if parent and parent["user_id"] not in told:
+        notify(conn, parent["user_id"], "reply", actor_id=user["id"], story_id=story_id, comment_id=cur.lastrowid)
+        told.add(parent["user_id"])
+    if story["author_id"] and story["author_id"] not in told:
+        notify(conn, story["author_id"], "comment", actor_id=user["id"], story_id=story_id, comment_id=cur.lastrowid)
+        told.add(story["author_id"])
+    names = list(dict.fromkeys(n.lower() for n in MENTION.findall(comment.body)))[:MAX_MENTIONS]
+    if names:
+        mentioned = conn.execute(
+            f"SELECT id FROM users WHERE username IN ({','.join('?' * len(names))})", names
+        ).fetchall()
+        for m in mentioned:
+            if m["id"] not in told:
+                notify(conn, m["id"], "mention", actor_id=user["id"], story_id=story_id, comment_id=cur.lastrowid)
+                told.add(m["id"])
     conn.commit()
     return comment_json(fetch_comment(conn, cur.lastrowid, user), user)
 
