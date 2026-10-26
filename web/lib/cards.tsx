@@ -11,11 +11,10 @@ const C = {
   bg: "#0c0a0b",
   panel: "#141012",
   line: "#2f2629",
-  text: "#ddd7d6",
-  bone: "#e4dcd7",
-  muted: "#898185",
+  text: "#e3d9c8",
+  muted: "#8c8079",
   blood: "#c4493b",
-  brass: "#b0927a",
+  amber: "#d6a55c",
   red: "#e0392b",
 };
 
@@ -60,9 +59,9 @@ function RatingBar({ value, width }: { value: number; width: number }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 18 }}>
       <div style={{ display: "flex", width, height: 12, background: C.line }}>
-        <div style={{ width: `${value * 10}%`, height: "100%", background: C.brass }} />
+        <div style={{ width: `${value * 10}%`, height: "100%", background: C.amber }} />
       </div>
-      <span style={{ fontFamily: "Fell", color: C.brass }}>{value.toFixed(1)} / 10</span>
+      <span style={{ fontFamily: "Fell", color: C.amber }}>{value.toFixed(1)} / 10</span>
     </div>
   );
 }
@@ -80,7 +79,7 @@ export function StoryCard({ story, host }: { story: Story; host: string }) {
         <span style={{ color: C.muted }}>#{String(story.id).padStart(4, "0")}</span>
       </div>
 
-      <div style={{ display: "flex", fontFamily: "Elite", color: C.bone, fontSize: titleSize(title, [112, 92, 74]), lineHeight: 1.15, marginTop: 60 }}>{title}</div>
+      <div style={{ display: "flex", fontFamily: "Elite", color: C.amber, fontSize: titleSize(title, [112, 92, 74]), lineHeight: 1.15, marginTop: 60 }}>{title}</div>
       {story.subtitle && <div style={{ display: "flex", fontSize: 42, color: C.muted, marginTop: 28, lineHeight: 1.4 }}>{clip(story.subtitle, 120)}</div>}
 
       <div style={{ display: "flex", fontFamily: "Fell", fontSize: 36, color: C.muted, marginTop: 40, gap: 30 }}>
@@ -88,7 +87,7 @@ export function StoryCard({ story, host }: { story: Story; host: string }) {
         <span>{story.reading_minutes} MIN READ</span>
       </div>
 
-      <div style={{ display: "flex", flexShrink: 0, marginTop: 60, padding: "44px 48px", background: C.panel, border: `2px solid ${C.line}`, borderLeft: `8px solid ${C.brass}`, fontSize: 44, lineHeight: 1.55, fontStyle: "italic" }}>
+      <div style={{ display: "flex", flexShrink: 0, marginTop: 60, padding: "44px 48px", background: C.panel, border: `2px solid ${C.line}`, borderLeft: `8px solid ${C.amber}`, fontSize: 44, lineHeight: 1.55, fontStyle: "italic" }}>
         “{excerpt}”
       </div>
 
@@ -112,12 +111,12 @@ export function StoryCard({ story, host }: { story: Story; host: string }) {
 export function LinkCard({ story }: { story: Story }) {
   const title = clip(story.title, 90);
   return (
-    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: `radial-gradient(ellipse at 20% 0%, #22141a 0%, ${C.bg} 70%)`, padding: "60px 70px", color: C.text, fontFamily: "Garamond", borderLeft: `10px solid ${story.source === "user" ? C.blood : C.brass}` }}>
+    <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column", background: `radial-gradient(ellipse at 20% 0%, #22141a 0%, ${C.bg} 70%)`, padding: "60px 70px", color: C.text, fontFamily: "Garamond", borderLeft: `10px solid ${story.source === "user" ? C.blood : C.amber}` }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontFamily: "Fell", fontSize: 28, letterSpacing: 3 }}>
         <span style={{ color: C.blood, letterSpacing: 8 }}>EIDOTHEA</span>
         <span style={{ color: C.muted }}>FILE #{String(story.id).padStart(4, "0")}</span>
       </div>
-      <div style={{ display: "flex", fontFamily: "Elite", color: C.bone, fontSize: titleSize(title, [80, 64, 50]), lineHeight: 1.15, marginTop: 40 }}>{title}</div>
+      <div style={{ display: "flex", fontFamily: "Elite", color: C.amber, fontSize: titleSize(title, [80, 64, 50]), lineHeight: 1.15, marginTop: 40 }}>{title}</div>
       <div style={{ display: "flex", fontSize: 32, color: C.muted, marginTop: 22, lineHeight: 1.4 }}>
         {clip(story.subtitle || plainText(story.body), 150)}
       </div>
