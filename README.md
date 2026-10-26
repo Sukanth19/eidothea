@@ -149,6 +149,11 @@ Removing an account also deletes that account's stories.
 - **Cut-off stories:** 278 stories in the dataset are cut off at 32,767 characters, the Excel cell limit. They're marked as cut off on the story page.
 - **Video game stories** are put in the "Video Games and Gaming" category automatically, on import and whenever a story is posted or edited (`api/app/gaming.py`). `api/tag_games.py` re-applies it to the existing database.
 - **Editing imports:** imported stories have no owner, so only moderators and above can edit them.
+- **Formatting:** story bodies are plain text with light markup (`**bold**`, `*italic*`, `__underline__`, `~~strike~~`, `> quote`, `## heading`, `* * *` scene break), defined in `web/lib/markup.ts`. The imported stories already use `*stars*` for emphasis and rows of stars between scenes, so they render with the same rules.
+- **Drafts:** anything you start writing is saved as a private draft a moment after you stop typing (*My stories → Drafts*). Published stories only change when you press Update.
+- **Ratings:** readers rate stories 1–10. An imported story's rating from the dataset counts as 5 votes, so reader scores move it gradually. Authors can't rate their own stories.
+- **Comments:** every published story has comments with likes and dislikes. Authors and moderators can delete comments.
+- **Upgrading:** new columns and tables are added to an existing `archive.db` when the API starts. Nothing needs to be run by hand.
 
 ### Deploy to Azure (free with Azure for Students)
 

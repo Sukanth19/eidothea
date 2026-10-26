@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { StoryForm } from "@/components/StoryForm";
+import { StoryEditor } from "@/components/editor/StoryEditor";
 import { apiGet, currentUser } from "@/lib/server-api";
 import type { Category, Story } from "@/lib/types";
 
@@ -31,10 +31,5 @@ export default async function EditStoryPage({ params }: { params: Promise<{ id: 
   // Keep any categories on the story even if they're rare
   const names = new Set([...(categories ?? []).map(c => c.name), ...story.categories]);
 
-  return (
-    <>
-      <h1 className="flicker" style={{ textAlign: "center" }}>Amend file #{String(story.id).padStart(4, "0")}</h1>
-      <StoryForm story={story} categories={[...names]} />
-    </>
-  );
+  return <StoryEditor story={story} categories={[...names]} user={user} />;
 }

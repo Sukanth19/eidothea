@@ -312,13 +312,77 @@ a.chip.on:hover { color: var(--bg); }
 .vote.down.on { color: var(--bg); background: var(--red); border-color: var(--red); }
 .vote:disabled:hover { color: var(--muted); border-color: var(--line); }
 
+/* ---------- Writer (story editor) ---------- */
+/* The editor takes the whole screen, like a manuscript on a desk */
+body:has(.writer) .site-header, body:has(.writer) .site-footer { display: none; }
+body:has(.writer) main.view { padding-block: 0; }
+html.hiccup main.view:has(.writer) { animation: none; }
+
+.writer-head { position: sticky; top: 0; z-index: 60; background: var(--bg); border-bottom: 1px solid var(--line); }
+.writer-top { display: flex; align-items: center; gap: .6rem; padding: .7rem 0 .5rem; }
+.writer-top .spacer { flex: 1; }
+.writer-top button { font-size: 1.15rem; padding: .15rem .8rem; }
+.writer-top button.ghost.on { border-color: var(--amber); color: var(--amber); }
+
+.pill { display: inline-flex; align-items: center; gap: .45rem; font-family: var(--term); font-size: 1.05rem; color: var(--muted); border: 1px solid var(--line); padding: 0 .6rem; white-space: nowrap; }
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); }
+.pill.saved i { background: var(--green); box-shadow: 0 0 6px var(--green); }
+.pill.dirty i { background: var(--amber); }
+.pill.saving i { background: var(--amber); animation: blink .6s steps(1) infinite; }
+.pill.error { color: var(--red); border-color: var(--red); }
+.pill.error i { background: var(--red); }
+
+.writer-tools { display: flex; align-items: center; gap: .1rem; overflow-x: auto; padding: .2rem 0 .45rem; scrollbar-width: thin; }
+.writer-tools .sep { flex: none; width: 1px; height: 22px; background: var(--line); margin: 0 .45rem; }
+.writer-tools select { flex: none; width: auto; margin: 0; padding: .2rem .4rem; border: 0; background: transparent; font-family: var(--term); font-size: 1.2rem; cursor: pointer; }
+.writer-tools select:focus { box-shadow: none; color: var(--green); }
+.tool { flex: none; border: 0; padding: .4rem; color: var(--text); background: transparent; font-size: 1.1rem; line-height: 1; }
+.tool:hover { background: var(--panel-2); color: var(--green); box-shadow: none; }
+.tool.on { color: var(--amber); background: var(--panel-2); }
+.tool:disabled:hover { background: transparent; color: var(--text); }
+.tool.caps { font-family: var(--doc); gap: .45rem; }
+.tool .tool-label { font-family: var(--term); font-size: 1rem; color: var(--muted); }
+.tool.on .tool-label { color: var(--amber); }
+
+.writer-error { max-width: 728px; margin: 1rem auto 0; }
+.writer-page { max-width: 728px; margin: 0 auto; padding: 2.5rem 0 8rem; }
+.writer-page textarea { display: block; width: 100%; margin: 0; padding: 0; border: 0; background: transparent; resize: none; overflow: hidden; box-shadow: none; }
+.writer-page textarea:focus { box-shadow: none; }
+.writer-title { font-family: var(--doc); font-size: clamp(1.9rem, 5vw, 2.6rem); line-height: 1.25; color: var(--amber); }
+.writer-subtitle { font-size: 1.15rem; color: var(--muted); margin-top: .6rem !important; }
+.writer-page textarea::placeholder { color: #4f5749; }
+.writer-byline { display: flex; gap: .5rem; margin: 1.2rem 0 2rem; }
+.author-chip { font-family: var(--term); font-size: 1.15rem; border: 1px solid var(--line); background: var(--panel-2); padding: 0 .75rem; border-radius: 999px; }
+
+.writer-body { outline: none; min-height: 45vh; caret-color: var(--green); }
+.writer-body p.is-editor-empty:first-child::before { content: attr(data-placeholder); color: #4f5749; float: left; height: 0; pointer-events: none; }
+/* No drop cap while writing: it fights the cursor */
+.story-body.writer-body > p:first-child::first-letter { float: none; font: inherit; color: inherit; padding: 0; }
+.writer-body hr.ProseMirror-selectednode::after { color: var(--amber); }
+.writer-body ::selection { background: rgba(143, 224, 138, .25); }
+
+.writer-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .55rem 16px; background: var(--bg); border-top: 1px solid var(--line); font-family: var(--term); font-size: 1.1rem; color: var(--muted); }
+.writer-bottom button { font-size: 1.15rem; padding: .1rem .8rem; }
+
+.scrim { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .6); }
+.drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: min(440px, 100vw); overflow-y: auto; background: var(--panel); border-left: 1px solid var(--line); padding: 1.2rem 1.4rem 2rem; display: flex; flex-direction: column; }
+.drawer-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
+.drawer-head h2 { margin: 0; }
+.drawer-foot { margin-top: auto; position: sticky; bottom: -2rem; padding: 1.2rem 0 2rem; margin-bottom: -2rem; background: var(--panel); border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: .8rem; align-items: center; }
+.drawer-foot .hint { flex-basis: 100%; margin: 0; }
+button.primary { font-size: 1.3rem; }
+
+@media (max-width: 600px) {
+  .writer-top { gap: .4rem; }
+  .writer-top button.ghost { padding-inline: .5rem; }
+  .writer-top .wide-only { display: none; }
+  .writer-page { padding-top: 1.5rem; }
+}
+
 /* ---------- Panels: auth, editor, admin ---------- */
 .terminal { max-width: 520px; margin: 1rem auto 0; background: var(--panel); border: 1px solid var(--line); padding: clamp(1.2rem, 4vw, 2.2rem); box-shadow: 0 0 60px rgba(0, 0, 0, .6); }
 .terminal .boot { font-family: var(--term); font-size: 1.25rem; color: var(--muted); line-height: 1.35; margin-bottom: 1.5rem; }
 
-.editor { max-width: 860px; margin: 0 auto; }
-.editor textarea.body { min-height: 26rem; font-size: .98rem; }
-.counter { font-family: var(--term); color: var(--muted); font-size: 1.1rem; display: flex; justify-content: space-between; margin-top: .3rem; }
 
 .table-wrap { overflow-x: auto; border: 1px solid var(--line); }
 table { border-collapse: collapse; width: 100%; min-width: 620px; }
