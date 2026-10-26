@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { EmailSettings } from "@/components/AccountForms";
 import { ProfileForm } from "@/components/ProfileForm";
 import { apiGet, currentUser } from "@/lib/server-api";
 import type { Profile } from "@/lib/types";
@@ -18,6 +19,7 @@ export default async function ProfilePage() {
       <p><Link href="/me">← my stories</Link></p>
       <h1 className="flicker">Your profile</h1>
       <p className="muted" style={{ maxWidth: "60ch" }}>All of this is optional. Share as much or as little as you like.</p>
+      <EmailSettings user={user} />
       <ProfileForm initial={profile} />
     </>
   );

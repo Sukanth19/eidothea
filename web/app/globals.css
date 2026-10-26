@@ -567,3 +567,11 @@ tr.you td:first-child { color: var(--amber); }
   /* The writing bar would sit on top of the keyboard */
   body:has(.writer-body:focus, .writer-page textarea:focus) .writer-bottom { display: none; }
 }
+
+/* ---------- Accounts & membership ---------- */
+/* The sign-up honeypot: off-screen for people, still "there" for bots */
+.trap { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
+.banner { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1rem; margin-top: .8rem; padding: .6rem 1rem; border: 1px dashed var(--amber); color: var(--amber); font-size: .95rem; }
+.banner b { color: var(--text); font-weight: 400; }
+.banner .msg { margin: 0; }
+.banner button { font-size: .85rem; padding: .05rem .7rem; }

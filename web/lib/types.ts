@@ -16,6 +16,33 @@ export interface User {
   created_at: string;
   /** May open /insights: the overseer, plus whoever they let in */
   insights: boolean;
+  /** unverified: email not confirmed yet · reader: can read and follow · member: can also post, comment and rate */
+  tier: "unverified" | "reader" | "member";
+  member: boolean;
+  email_verified: boolean;
+  /** Only on the logged-in user's own record */
+  email?: string | null;
+}
+
+export interface InviteList {
+  /** null: no limit (staff) */
+  left: number | null;
+  invites: { code: string; created_at: string; used_at: string | null; used_by: string | null }[];
+}
+
+export interface Application {
+  id: number;
+  note: string;
+  status: "pending" | "approved" | "rejected";
+  created_at: string;
+  decided_at: string | null;
+}
+
+export interface QueuedApplication extends Application {
+  user_id: number;
+  username: string;
+  joined: string;
+  decided_by: string | null;
 }
 
 interface StoryBase {

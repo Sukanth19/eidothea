@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { EB_Garamond, IM_Fell_English_SC, Special_Elite } from "next/font/google";
 import { headers } from "next/headers";
 import { Atmosphere, FxToggle } from "@/components/Atmosphere";
+import { EmailBanner } from "@/components/EmailBanner";
 import { Nav } from "@/components/Nav";
 import { Tracker } from "@/components/Tracker";
 import Link from "next/link";
@@ -43,6 +44,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <Atmosphere>
           <Tracker />
           <Nav user={user} />
+          <EmailBanner user={user} />
           <main className="view wrap">{children}</main>
           <footer className="site-footer">
             <div className="wrap">
