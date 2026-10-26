@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { IBM_Plex_Mono, Special_Elite, VT323 } from "next/font/google";
+import { headers } from "next/headers";
 import { Atmosphere, FxToggle } from "@/components/Atmosphere";
 import { Nav } from "@/components/Nav";
 import { currentUser } from "@/lib/server-api";
@@ -10,10 +11,19 @@ const plex = IBM_Plex_Mono({ subsets: ["latin"], weight: ["400", "600"], style: 
 const elite = Special_Elite({ subsets: ["latin"], weight: "400", variable: "--font-elite" });
 const vt = VT323({ subsets: ["latin"], weight: "400", variable: "--font-vt" });
 
-export const metadata: Metadata = {
-  title: { default: "Eidothea", template: "%s · Eidothea" },
-  description: "An archive of creepypastas, recovered and new.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  // Link previews need absolute image URLs; build them from the address the visitor used
+  const h = await headers();
+  const host = h.get("x-forwarded-host") ?? h.get("host") ?? "localhost:3000";
+  const proto = h.get("x-forwarded-proto") ?? (host.startsWith("localhost") ? "http" : "https");
+  return {
+    metadataBase: new URL(`${proto}://${host}`),
+    title: { default: "Eidothea", template: "%s · Eidothea" },
+    description: "An archive of creepypastas, recovered and new.",
+    openGraph: { siteName: "Eidothea", type: "website" },
+    twitter: { card: "summary_large_image" },
+  };
+}
 
 export const viewport: Viewport = {
   width: "device-width",

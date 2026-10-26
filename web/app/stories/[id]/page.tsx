@@ -7,7 +7,7 @@ import { RateStory } from "@/components/RateStory";
 import { Reader } from "@/components/Reader";
 import { ScrambleText } from "@/components/ScrambleText";
 import { Rating } from "@/components/StoryCard";
-import { formatDate } from "@/lib/format";
+import { excerpt, formatDate } from "@/lib/format";
 import { apiGet, currentUser } from "@/lib/server-api";
 import type { Comment, Story } from "@/lib/types";
 
@@ -20,7 +20,14 @@ async function load(id: string) {
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const story = await load((await params).id);
-  return { title: story ? story.title || "Untitled draft" : "Not found" };
+  if (!story) return { title: "Not found" };
+  const title = story.title || "Untitled draft";
+  const description = excerpt(story.subtitle || story.body, 180);
+  return {
+    title,
+    description,
+    openGraph: { title, description, type: "article", authors: story.author ? [story.author] : undefined },
+  };
 }
 
 export default async function StoryPage({ params }: Props) {
