@@ -104,6 +104,8 @@ interface StoryBase {
   published_at: string;
   updated_at: string | null;
   can_edit: boolean;
+  /** How far the logged-in reader got (confirmed accounts only); null if never opened */
+  my_read?: { progress: number; finished: boolean } | null;
 }
 
 export interface StorySummary extends StoryBase {

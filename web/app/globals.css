@@ -248,6 +248,11 @@ a.chip.on:hover { color: var(--bg); }
 .badge.import { color: var(--amber); }
 .badge.draft { color: var(--muted); }
 .card .cw { color: var(--red); letter-spacing: .08em; }
+.card .read-mark { color: var(--amber); }
+.card.finished { opacity: .72; }
+.card.finished:hover { opacity: 1; }
+.card-progress { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--line); }
+.card-progress i { display: block; height: 100%; background: var(--amber); }
 
 /* ---------- Content warnings ---------- */
 .warning-gate { border: 1px dashed var(--red); padding: 1.6rem 1.4rem; margin: 2rem 0; text-align: center; }

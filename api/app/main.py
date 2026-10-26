@@ -228,6 +228,21 @@ def check_publishable(title: str, body: str) -> None:
         raise HTTPException(422, f"Stories need at least {MIN_BODY} characters to be published.")
 
 
+def with_reads(conn, user, items: list[dict]) -> list[dict]:
+    """Marks the stories this reader has started or finished, for the cards' read markers."""
+    if not user or not items:
+        return items
+    reads = {r["story_id"]: r for r in conn.execute(
+        f"""SELECT story_id, progress, finished FROM reads
+            WHERE user_id = ? AND story_id IN ({','.join('?' * len(items))})""",
+        [user["id"], *(i["id"] for i in items)],
+    )}
+    for i in items:
+        r = reads.get(i["id"])
+        i["my_read"] = {"progress": r["progress"], "finished": bool(r["finished"])} if r else None
+    return items
+
+
 def rating_json(conn, story_id: int, user) -> dict:
     row = fetch_story(conn, story_id, user)
     mine = conn.execute(
@@ -329,7 +344,7 @@ def list_stories(
         f"{with_sql}SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt {base} ORDER BY {order_sql} LIMIT ? OFFSET ?",
         [*args, per_page, (page - 1) * per_page],
     ).fetchall()
-    items = [story_json(r, user) for r in rows]
+    items = with_reads(conn, user, [story_json(r, user) for r in rows])
     if match and items:
         # Show the part of the story that matched instead of its opening lines
         hits = dict(conn.execute(
@@ -385,6 +400,7 @@ def get_story(story_id: int, conn: Conn, user: OptionalUser):
         out["my_rating"] = rating_json(conn, story_id, user)["my_rating"]
         out["recommended"] = social.recommend_state(conn, story_id, user)["recommended"]
         out["bookmarked"] = social.bookmark_state(conn, story_id, user)["bookmarked"]
+        with_reads(conn, user, [out])
     return out
 
 

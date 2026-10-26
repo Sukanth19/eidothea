@@ -45,14 +45,18 @@ export function StoryGrid({ stories, deleteDrafts }: { stories: StorySummary[]; 
 function StoryCard({ story: s }: { story: StorySummary }) {
   const draft = s.status === "draft";
   const title = s.title || "Untitled draft";
+  const finished = !!s.my_read?.finished;
+  const started = !finished && (s.my_read?.progress ?? 0) >= 0.15 ? s.my_read!.progress : 0;
   return (
-    <Link href={draft ? `/stories/${s.id}/edit` : `/stories/${s.id}`} className={`card ${draft ? "draft" : s.source}`}>
+    <Link href={draft ? `/stories/${s.id}/edit` : `/stories/${s.id}`} className={`card ${draft ? "draft" : s.source}${finished ? " finished" : ""}`}>
       <div className="top">
         <span>
           #{String(s.id).padStart(4, "0")} · {s.reading_minutes} MIN
           {s.warnings.length > 0 && (
             <> · <span className="cw" title={`Content warnings: ${s.warnings.map(w => WARNING_LABEL[w]).join(", ")}`}>CW</span></>
           )}
+          {finished && <> · <span className="read-mark" title="You finished this one">✓ READ</span></>}
+          {started > 0 && <> · <span className="read-mark">{Math.round(started * 100)}% READ</span></>}
         </span>
         {draft ? (
           <span className="badge draft">DRAFT</span>
@@ -73,6 +77,7 @@ function StoryCard({ story: s }: { story: StorySummary }) {
           <span key={c} className="chip">{c}</span>
         ))}
       </div>
+      {started > 0 && <span className="card-progress" aria-hidden="true"><i style={{ width: `${started * 100}%` }} /></span>}
     </Link>
   );
 }
