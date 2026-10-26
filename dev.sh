@@ -24,6 +24,6 @@ if [ ! -d web/node_modules ]; then
 fi
 
 trap 'kill 0' EXIT
-(cd api && .venv/bin/uvicorn app.main:app --reload --port 8000) &
+(cd api && .venv/bin/python -m uvicorn app.main:app --reload --port 8000) &
 (cd web && NEXT_TELEMETRY_DISABLED=1 npx next dev -p 3000) &
 wait
