@@ -87,9 +87,12 @@ def tier(user) -> str:
 
 
 def can_edit_story(user, story) -> bool:
+    """The author, or staff who outrank them (imported stories count as a user's)."""
     if not user:
         return False
-    return story["author_id"] == user["id"] or level(user) >= ROLE_LEVEL["mod"]
+    if story["author_id"] == user["id"]:
+        return True
+    return level(user) >= ROLE_LEVEL["mod"] and level(user) > ROLE_LEVEL[story["author_role"]]
 
 
 def can_view_insights(user) -> bool:

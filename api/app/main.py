@@ -135,7 +135,7 @@ STORY_FROM = """stories s
 
 STORY_COLUMNS = f"""
     s.id, s.title, s.subtitle, s.author_id, s.author_name, u.username AS author_username,
-    COALESCE(u.profile_public, 0) AS author_public,
+    COALESCE(u.profile_public, 0) AS author_public, COALESCE(u.role, 'user') AS author_role,
     s.tags, s.categories, s.rating AS archive_rating, s.reading_minutes, s.source, s.truncated,
     s.status, s.published_at, s.updated_at,
     COALESCE(r.n, 0) AS rating_count,
