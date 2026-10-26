@@ -158,6 +158,36 @@ export interface Story extends StoryBase {
   bookmarked?: boolean;
 }
 
+/** A writer's numbers for one of their published stories */
+export interface StoryStats {
+  id: number;
+  title: string;
+  published_at: string;
+  reading_minutes: number;
+  /** Everyone who opened it, a person once a day */
+  visits: number;
+  /** Confirmed accounts who started it, and how many of them finished */
+  readers: number;
+  finished: number;
+  avg_progress: number | null;
+  ratings: number;
+  avg_score: number | null;
+  comments: number;
+  recommends: number;
+  saves: number;
+}
+
+export interface WriterStats {
+  totals: { stories: number; followers: number; visits: number; readers: number; finished: number; comments: number; recommends: number; saves: number };
+  stories: StoryStats[];
+}
+
+export interface StoryStatsDetail extends StoryStats {
+  /** Readers who stopped (without finishing) in each tenth of the story */
+  stopped: number[];
+  daily: { day: string; visitors: number }[];
+}
+
 /** A writing prompt the keepers set */
 export interface Prompt {
   id: number;

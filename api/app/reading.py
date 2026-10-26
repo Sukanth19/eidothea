@@ -3,11 +3,11 @@
 Only accounts with a confirmed email are recorded: how far down a story they got,
 roughly how long they spent, and whether they finished it."""
 
-from fastapi import APIRouter, Response
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, Field
 
 from . import guard
-from .deps import Conn, OptionalUser
+from .deps import Conn, CurrentUser, OptionalUser
 
 router = APIRouter()
 
@@ -73,6 +73,64 @@ def record_read(story_id: int, body: ReadIn, conn: Conn, user: OptionalUser):
     )
     conn.commit()
     return Response(status_code=204)
+
+
+# --------------------------------------------------------------------------- writer stats
+
+STORY_STATS = """
+    s.id, s.title, s.published_at, s.reading_minutes,
+    (SELECT COUNT(DISTINCT day || visitor) FROM pageviews WHERE story_id = s.id) AS visits,
+    (SELECT COUNT(*) FROM reads WHERE story_id = s.id) AS readers,
+    (SELECT COUNT(*) FROM reads WHERE story_id = s.id AND finished) AS finished,
+    (SELECT AVG(progress) FROM reads WHERE story_id = s.id) AS avg_progress,
+    (SELECT COUNT(*) FROM story_ratings WHERE story_id = s.id) AS ratings,
+    (SELECT AVG(score) FROM story_ratings WHERE story_id = s.id) AS avg_score,
+    (SELECT COUNT(*) FROM comments WHERE story_id = s.id) AS comments,
+    (SELECT COUNT(*) FROM recommends WHERE story_id = s.id) AS recommends,
+    (SELECT COUNT(*) FROM bookmarks WHERE story_id = s.id) AS saves
+"""
+
+
+def stats_json(row) -> dict:
+    out = dict(row)
+    out["avg_progress"] = round(row["avg_progress"], 2) if row["avg_progress"] is not None else None
+    out["avg_score"] = round(row["avg_score"], 1) if row["avg_score"] is not None else None
+    return out
+
+
+@router.get("/api/me/stats")
+def my_stats(conn: Conn, user: CurrentUser):
+    """How the writer's published stories are doing. Readers are confirmed accounts (see reads);
+    visits count everyone, a person once a day."""
+    stories = [stats_json(r) for r in conn.execute(
+        f"""SELECT {STORY_STATS} FROM stories s WHERE s.author_id = ? AND s.status = 'published'
+            ORDER BY s.published_at DESC, s.id DESC""",
+        (user["id"],),
+    )]
+    totals = {k: sum(s[k] for s in stories) for k in ("visits", "readers", "finished", "comments", "recommends", "saves")}
+    totals["stories"] = len(stories)
+    totals["followers"] = conn.execute("SELECT COUNT(*) FROM follows WHERE followee_id = ?", (user["id"],)).fetchone()[0]
+    return {"totals": totals, "stories": stories}
+
+
+@router.get("/api/me/stats/{story_id}")
+def story_stats(story_id: int, conn: Conn, user: CurrentUser):
+    """One story's numbers, plus where readers stopped: how many got no further than each tenth."""
+    row = conn.execute(
+        f"SELECT {STORY_STATS} FROM stories s WHERE s.id = ? AND s.author_id = ? AND s.status = 'published'",
+        (story_id, user["id"]),
+    ).fetchone()
+    if not row:
+        raise HTTPException(404, "No published story of yours by that number.")
+    stopped = [0] * 10
+    for (progress,) in conn.execute("SELECT progress FROM reads WHERE story_id = ? AND NOT finished", (story_id,)):
+        stopped[min(9, int(progress * 10))] += 1
+    daily = [dict(r) for r in conn.execute(
+        """SELECT day, COUNT(DISTINCT visitor) AS visitors FROM pageviews
+           WHERE story_id = ? AND day >= date('now', '-29 days') GROUP BY day ORDER BY day""",
+        (story_id,),
+    )]
+    return {**stats_json(row), "stopped": stopped, "daily": daily}
 
 
 def affinity_sql() -> str:

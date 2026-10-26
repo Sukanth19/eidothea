@@ -28,6 +28,7 @@ export default async function MyStoriesPage({ searchParams }: { searchParams: Pr
           </span>
         </div>
         <span style={{ display: "inline-flex", gap: ".6rem", flexWrap: "wrap" }}>
+          <Link href="/me/stats" className="btn ghost">STATS</Link>
           <Link href="/me/profile" className="btn ghost">EDIT PROFILE</Link>
           <Link href="/stories/new" className="btn">+ NEW STORY</Link>
         </span>
