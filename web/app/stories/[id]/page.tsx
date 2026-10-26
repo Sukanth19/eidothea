@@ -7,14 +7,14 @@ import { RateStory } from "@/components/RateStory";
 import { ShareStory } from "@/components/ShareStory";
 import { Reader } from "@/components/Reader";
 import { ScrambleText } from "@/components/ScrambleText";
-import { Rating } from "@/components/StoryCard";
+import { Rating, StoryGrid } from "@/components/StoryCard";
 import { Sigil } from "@/components/Sigil";
 import { BookmarkButton, FollowButton, RecommendButton } from "@/components/Social";
 import { WarningGate } from "@/components/WarningGate";
 import { Whisper } from "@/components/Whisper";
 import { excerpt, formatDate } from "@/lib/format";
 import { apiGet, currentUser } from "@/lib/server-api";
-import type { Comment, SocialInfo, Story } from "@/lib/types";
+import type { Comment, SocialInfo, Story, StorySummary } from "@/lib/types";
 
 // Scrawled behind the end of each story, found only by the cursor's light
 const ENDINGS = ["IT READ THIS TOO", "YOU WEREN'T READING ALONE", "DON'T LOOK BEHIND YOU", "IT FOLLOWED YOU HERE", "NOW IT KNOWS YOUR NAME"];
@@ -46,10 +46,11 @@ export default async function StoryPage({ params, searchParams }: Props) {
 
   const ownStory = !!user && story.author_id === user.id;
   const draft = story.status === "draft";
-  const [comments, social] = await Promise.all([
+  const [comments, social, related] = await Promise.all([
     draft ? [] : apiGet<Comment[]>(`/api/stories/${story.id}/comments`).then(c => c ?? []),
     // Community authors can be followed; imported stories have no account behind them
     story.author_id && story.author ? apiGet<SocialInfo>(`/api/profiles/${encodeURIComponent(story.author)}/social`) : null,
+    draft ? null : apiGet<{ items: StorySummary[] }>(`/api/stories/${story.id}/related?limit=4`),
   ]);
 
   return (
@@ -163,6 +164,12 @@ export default async function StoryPage({ params, searchParams }: Props) {
             <ShareStory storyId={story.id} title={story.title} label="SHARE THIS STORY" />
             <Link href="/random" className="btn" prefetch={false}>ANOTHER ONE</Link>
           </div>
+          {related && related.items.length > 0 && (
+            <section className="related" aria-label="More like this">
+              <div className="section-head"><h2>If this one got under your skin…</h2></div>
+              <StoryGrid stories={related.items} />
+            </section>
+          )}
           <Comments storyId={story.id} initial={comments} user={user} />
         </>
       )}

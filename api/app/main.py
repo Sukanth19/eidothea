@@ -417,6 +417,33 @@ def get_story(story_id: int, conn: Conn, user: OptionalUser):
     return out
 
 
+@app.get("/api/stories/{story_id}/related")
+def related(story_id: int, conn: Conn, user: OptionalUser, limit: int = Query(4, ge=1, le=12)):
+    """What to read next: stories that share this one's genres, tags or writer, and above all
+    the ones people who finished this also finished. Skips what the reader has already finished."""
+    fetch_published(conn, story_id, user)
+    rows = conn.execute(
+        f"""WITH me AS (SELECT categories, tags, author_id FROM stories WHERE id = :id),
+                 also AS (SELECT r2.story_id, COUNT(*) AS n FROM reads r1
+                          JOIN reads r2 ON r2.user_id = r1.user_id AND r2.story_id <> r1.story_id AND r2.finished
+                          WHERE r1.story_id = :id AND r1.finished GROUP BY r2.story_id)
+            SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt,
+                   2 * (SELECT COUNT(*) FROM json_each(s.categories) a, json_each((SELECT categories FROM me)) b
+                        WHERE a.value = b.value)
+                   + (SELECT COUNT(*) FROM json_each(s.tags) a, json_each((SELECT tags FROM me)) b
+                      WHERE lower(a.value) = lower(b.value))
+                   + (s.author_id IS NOT NULL AND s.author_id = (SELECT author_id FROM me))
+                   + 3 * COALESCE(also.n, 0) AS fit
+            FROM {STORY_FROM} LEFT JOIN also ON also.story_id = s.id
+            WHERE s.status = 'published' AND s.id <> :id AND fit > 0
+              AND s.id NOT IN (SELECT story_id FROM reads WHERE user_id = :uid AND finished)
+            ORDER BY fit DESC, score IS NULL, score DESC, s.id DESC
+            LIMIT :limit""",
+        {"id": story_id, "uid": user["id"] if user else None, "limit": limit},
+    ).fetchall()
+    return {"items": with_reads(conn, user, [story_json(r, user) for r in rows])}
+
+
 @app.post("/api/stories", status_code=201)
 def create_story(story: StoryIn, conn: Conn, user: MemberUser, tasks: BackgroundTasks):
     if story.status == "published":
