@@ -13,7 +13,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from . import guard, insights, mail
 from .notify import notify, unread
-from .deps import Conn, CurrentUser, ModUser, OptionalUser
+from .deps import ActiveUser, Conn, CurrentUser, ModUser, OptionalUser
 from .security import (
     FOUNDING_MEMBERS,
     INVITES_PER_MEMBER,
@@ -26,6 +26,7 @@ from .security import (
     hash_password,
     is_member,
     level,
+    suspended_until,
     tier,
     token_hash,
     verify_password,
@@ -52,6 +53,8 @@ def user_json(u, *, private: bool = False) -> dict:
         "tier": tier(u),
         "member": is_member(u),
         "email_verified": bool(u["email_verified_at"]),
+        "suspended_until": suspended_until(u),
+        "suspended_reason": u["suspended_reason"] if suspended_until(u) else None,
     }
     if private:
         out["email"] = u["email"]
@@ -78,7 +81,7 @@ def require_verified(user: CurrentUser):
     return user
 
 
-def require_member(user: CurrentUser):
+def require_member(user: ActiveUser):
     if not is_member(user):
         raise HTTPException(403, "Only members can do that. Ask a member for an invite, or join the waiting list.")
     return user

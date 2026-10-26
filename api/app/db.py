@@ -228,6 +228,8 @@ MIGRATIONS = {
         "invited_by": "INTEGER",
         "invite_code": "TEXT",  # the invite they signed up with, used up once their email is confirmed
         "email_follows": "INTEGER NOT NULL DEFAULT 0",  # email me when someone I follow publishes
+        "suspended_until": "TEXT",  # may read but not post, comment, rate, vote or report until then
+        "suspended_reason": "TEXT NOT NULL DEFAULT ''",
     },
     "stories": {
         "subtitle": "TEXT NOT NULL DEFAULT ''",

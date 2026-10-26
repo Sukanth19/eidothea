@@ -48,6 +48,9 @@ export interface OpenReport {
   comment_body: string | null;
   author: string | null;
   author_id: number | null;
+  author_suspended_until: string | null;
+  /** The viewing keeper outranks the author */
+  can_suspend: boolean;
   first_at: string;
   reasons: Record<string, number>;
   notes: { by: string; note: string }[];
@@ -70,6 +73,9 @@ export interface User {
   mail_ready?: boolean;
   /** Unread notifications, on the logged-in user's own record */
   unread?: number;
+  /** Set while suspended: may read, not post ("9999-12-31 …" means until lifted) */
+  suspended_until: string | null;
+  suspended_reason: string | null;
 }
 
 export interface SocialInfo {
@@ -81,7 +87,7 @@ export interface SocialInfo {
 
 export interface Notification {
   id: number;
-  kind: "follow" | "story" | "comment" | "reply" | "mention" | "recommend" | "invite_used" | "member" | "rejected";
+  kind: "follow" | "story" | "comment" | "reply" | "mention" | "recommend" | "invite_used" | "member" | "rejected" | "suspended";
   created_at: string;
   read: boolean;
   story_id: number | null;

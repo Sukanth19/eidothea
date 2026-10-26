@@ -6,6 +6,7 @@ import { useState } from "react";
 import { api } from "@/lib/client-api";
 import { formatDate } from "@/lib/format";
 import { ROLE_LABEL, type ManagedUser, type Role } from "@/lib/types";
+import { SuspendControl, suspendedText } from "./Suspend";
 
 export function UserTable({ users, assignable, meId }: { users: ManagedUser[]; assignable: Role[]; meId: number }) {
   const router = useRouter();
@@ -35,7 +36,7 @@ export function UserTable({ users, assignable, meId }: { users: ManagedUser[]; a
       <div className="table-wrap">
         <table>
           <thead>
-            <tr><th>Member</th><th>Role</th><th>Can post</th><th>Stories</th><th>Joined</th><th></th></tr>
+            <tr><th>Member</th><th>Role</th><th>Can post</th><th>Standing</th><th>Stories</th><th>Joined</th><th></th></tr>
           </thead>
           <tbody>
             <AnimatePresence initial={false}>
@@ -74,6 +75,15 @@ export function UserTable({ users, assignable, meId }: { users: ManagedUser[]; a
                         />
                         {u.member ? "member" : u.email_verified ? "reader" : "unconfirmed"}
                       </label>
+                    )}
+                  </td>
+                  <td>
+                    {u.can_manage ? (
+                      <SuspendControl userId={u.id} username={u.username} until={u.suspended_until} />
+                    ) : u.suspended_until ? (
+                      <span className="caps suspended">{suspendedText(u.suspended_until)}</span>
+                    ) : (
+                      <span className="muted">good</span>
                     )}
                   </td>
                   <td>{u.story_count}</td>

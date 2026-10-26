@@ -27,7 +27,8 @@ export default async function AdminPage() {
       <h1 className="flicker">Control room</h1>
       <p className="muted" style={{ maxWidth: "72ch" }}>
         Moderators and admins can edit or delete any story. Admins can promote users to moderator and remove accounts below them.
-        {user.role === "overseer" && " As Overseer you can also appoint admins."} Removing an account also deletes its stories.
+        {user.role === "overseer" && " As Overseer you can also appoint admins."} Suspending someone stops them posting for a while
+        and keeps what they wrote; removing an account also deletes its stories.
       </p>
       <UserTable users={data?.users ?? []} assignable={data?.assignable_roles ?? []} meId={user.id} />
     </>

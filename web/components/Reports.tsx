@@ -5,6 +5,7 @@ import { useState } from "react";
 import { api } from "@/lib/client-api";
 import { formatDate, excerpt } from "@/lib/format";
 import { REPORT_REASON, type OpenReport, type ReportReason, type User } from "@/lib/types";
+import { SuspendControl } from "./Suspend";
 
 type Target = { story_id: number } | { comment_id: number };
 
@@ -101,6 +102,9 @@ export function ReportQueue({ initial }: { initial: OpenReport[] }) {
                   </>
                 ) : (
                   <button type="button" className="danger" onClick={() => setArmed(key)}>TAKE IT DOWN</button>
+                )}
+                {r.can_suspend && r.author_id && r.author && (
+                  <SuspendControl key={`${key}-${r.author_suspended_until}`} userId={r.author_id} username={r.author} until={r.author_suspended_until} />
                 )}
               </span>
             </li>

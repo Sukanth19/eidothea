@@ -61,7 +61,7 @@ def user_for_token(conn: sqlite3.Connection, token: str | None) -> sqlite3.Row |
         return None
     return conn.execute(
         """SELECT u.id, u.username, u.role, u.created_at, u.insights, u.last_seen_at,
-                  u.email, u.email_verified_at, u.member, u.member_since
+                  u.email, u.email_verified_at, u.member, u.member_since, u.suspended_until, u.suspended_reason
            FROM sessions s JOIN users u ON u.id = s.user_id
            WHERE s.token_hash = ? AND s.expires_at > ?""",
         (token_hash(token), datetime.now(timezone.utc).isoformat()),
@@ -93,6 +93,22 @@ def can_edit_story(user, story) -> bool:
     if story["author_id"] == user["id"]:
         return True
     return level(user) >= ROLE_LEVEL["mod"] and level(user) > ROLE_LEVEL[story["author_role"]]
+
+
+# A suspension with no end date, until a keeper lifts it
+FOREVER = "9999-12-31 00:00:00"
+
+
+def suspended_until(user) -> str | None:
+    """When their suspension ends, if they're suspended right now."""
+    until = user["suspended_until"] if user else None
+    now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+    return until if until and until > now else None
+
+
+def can_moderate_user(actor, target) -> bool:
+    """Staff can suspend people below them."""
+    return level(actor) >= ROLE_LEVEL["mod"] and level(target) < level(actor)
 
 
 def can_view_insights(user) -> bool:

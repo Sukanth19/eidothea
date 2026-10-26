@@ -1,5 +1,7 @@
-"""Reports: readers flag a story or comment, the keepers dismiss it or take it down."""
+"""Reports: readers flag a story or comment, the keepers dismiss it or take it down.
+Suspensions: the keepers stop someone posting for a while, keeping what they've written."""
 
+from datetime import datetime, timedelta, timezone
 from typing import Literal
 
 from fastapi import APIRouter, HTTPException, Response
@@ -7,8 +9,9 @@ from pydantic import BaseModel, Field, model_validator
 
 from . import guard
 from .accounts import ReaderUser
-from .deps import Conn, ModUser
-from .security import ROLE_LEVEL, can_edit_story, level
+from .deps import Conn, ModUser, check_active
+from .notify import notify
+from .security import FOREVER, ROLE_LEVEL, can_edit_story, can_moderate_user, level, suspended_until
 
 router = APIRouter()
 
@@ -57,6 +60,7 @@ def target_author(conn, t: Target):
 
 @router.post("/api/reports", status_code=204)
 def report(body: ReportIn, conn: Conn, user: ReaderUser):
+    check_active(user)
     guard.limit(f"report:{user['id']}", 20, 3600, "That's a lot of reports. The keepers will get to them.")
     if target_author(conn, body)["author_id"] == user["id"]:
         raise HTTPException(400, "You can't report your own writing. You can delete it.")
@@ -76,7 +80,7 @@ def report(body: ReportIn, conn: Conn, user: ReaderUser):
 
 
 @router.get("/api/reports")
-def open_reports(conn: Conn, _mod: ModUser):
+def open_reports(conn: Conn, mod: ModUser):
     """Open reports, one entry per reported thing, the most reported first."""
     rows = conn.execute(
         """SELECT r.story_id, r.comment_id, r.reason, r.note, r.created_at, ru.username AS reporter,
@@ -84,7 +88,9 @@ def open_reports(conn: Conn, _mod: ModUser):
                   COALESCE(s.title, cs.title) AS story_title,
                   c.body AS comment_body,
                   COALESCE(su.username, s.author_name, cu.username) AS author,
-                  COALESCE(s.author_id, c.user_id) AS author_id
+                  COALESCE(s.author_id, c.user_id) AS author_id,
+                  COALESCE(su.role, cu.role) AS author_role,
+                  COALESCE(su.suspended_until, cu.suspended_until) AS author_suspended
            FROM reports r
            JOIN users ru ON ru.id = r.reporter_id
            LEFT JOIN stories s ON s.id = r.story_id LEFT JOIN users su ON su.id = s.author_id
@@ -100,6 +106,8 @@ def open_reports(conn: Conn, _mod: ModUser):
             "story_id": r["story_id"], "comment_id": r["comment_id"], "link_story": r["link_story"],
             "story_title": r["story_title"], "comment_body": r["comment_body"],
             "author": r["author"], "author_id": r["author_id"],
+            "author_suspended_until": suspended_until({"suspended_until": r["author_suspended"]}),
+            "can_suspend": bool(r["author_id"]) and can_moderate_user(mod, {"role": r["author_role"]}),
             "first_at": r["created_at"], "reasons": {}, "notes": [],
         })
         g["reasons"][r["reason"]] = g["reasons"].get(r["reason"], 0) + 1
@@ -130,3 +138,41 @@ def resolve(body: ResolveIn, conn: Conn, mod: ModUser):
         )
     conn.commit()
     return open_reports(conn, mod)
+
+
+# --------------------------------------------------------------------------- suspensions
+
+class SuspendIn(BaseModel):
+    days: int | None = Field(default=None, ge=1, le=3650)  # None: until a keeper lifts it
+    reason: str = Field(default="", max_length=300)
+
+
+def suspendable(conn, user_id: int, mod):
+    target = conn.execute("SELECT id, role FROM users WHERE id = ?", (user_id,)).fetchone()
+    if not target:
+        raise HTTPException(404, "No such user.")
+    if not can_moderate_user(mod, target):
+        raise HTTPException(403, "You don't outrank them.")
+    return target
+
+
+@router.put("/api/users/{user_id}/suspension")
+def suspend(user_id: int, body: SuspendIn, conn: Conn, mod: ModUser):
+    """Stops someone posting, commenting, rating, voting and reporting. What they wrote stays."""
+    suspendable(conn, user_id, mod)
+    until = FOREVER if body.days is None else (
+        datetime.now(timezone.utc) + timedelta(days=body.days)
+    ).strftime("%Y-%m-%d %H:%M:%S")
+    reason = " ".join(body.reason.split())
+    conn.execute("UPDATE users SET suspended_until = ?, suspended_reason = ? WHERE id = ?", (until, reason, user_id))
+    notify(conn, user_id, "suspended")  # no actor: which keeper did it stays with the keepers
+    conn.commit()
+    return {"suspended_until": until, "suspended_reason": reason}
+
+
+@router.delete("/api/users/{user_id}/suspension")
+def lift(user_id: int, conn: Conn, mod: ModUser):
+    suspendable(conn, user_id, mod)
+    conn.execute("UPDATE users SET suspended_until = NULL, suspended_reason = '' WHERE id = ?", (user_id,))
+    conn.commit()
+    return {"suspended_until": None, "suspended_reason": None}

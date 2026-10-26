@@ -1,6 +1,6 @@
 """Notifications: the bell in the nav. Callers commit."""
 
-KINDS = {"follow", "story", "comment", "reply", "mention", "recommend", "invite_used", "member", "rejected"}
+KINDS = {"follow", "story", "comment", "reply", "mention", "recommend", "invite_used", "member", "rejected", "suspended"}
 KEEP = 200  # per person; older ones are dropped
 
 

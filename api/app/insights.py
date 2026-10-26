@@ -14,7 +14,7 @@ from urllib.parse import urlparse
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from pydantic import BaseModel, Field, field_validator
 
-from .deps import Conn, CurrentUser, OptionalUser
+from .deps import Conn, CurrentUser, OptionalUser, check_active
 from .security import can_view_insights
 
 router = APIRouter()
@@ -158,6 +158,7 @@ def my_profile(conn: Conn, user: CurrentUser):
 
 @router.put("/api/me/profile")
 def save_profile(body: ProfileIn, conn: Conn, user: CurrentUser):
+    check_active(user)  # a bio is somewhere to post too
     conn.execute(
         "UPDATE users SET display_name = ?, bio = ?, instagram = ?, profile_public = ?, email_follows = ? WHERE id = ?",
         (body.display_name, body.bio, body.instagram, int(body.profile_public), int(body.email_follows), user["id"]),

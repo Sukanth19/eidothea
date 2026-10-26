@@ -368,6 +368,8 @@ a.chip.on:hover { color: var(--bg); }
 .report-actions { display: inline-flex; gap: .5rem; flex-wrap: wrap; }
 .report-done { margin: 0; }
 .report-item { padding: 1rem 0; }
+.suspended { color: var(--red); font-size: .9rem; }
+.banner.suspended-banner { border-color: var(--red); color: var(--red); }
 .vote { border-color: var(--line); color: var(--muted); font-size: .88rem; padding: 0 .55rem; }
 .vote:hover { background: transparent; color: var(--amber); border-color: var(--amber); box-shadow: none; }
 .vote.on { color: var(--bg); background: var(--amber); border-color: var(--amber); }

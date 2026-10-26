@@ -21,6 +21,7 @@ function Text({ n }: { n: Notification }) {
     case "recommend": return <>{who} recommended {story}.</>;
     case "invite_used": return <>{who} joined with your invite.</>;
     case "member": return <>You&apos;re a member now. You can <Link href="/stories/new">write</Link>, comment and rate.</>;
+    case "suspended": return <>A keeper suspended your account. You can still read; the notice at the top of the page says until when.</>;
     case "rejected": return <>Your membership request wasn&apos;t accepted this time. <Link href="/membership">You can ask again in a week</Link>.</>;
   }
 }
