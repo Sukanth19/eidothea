@@ -216,13 +216,14 @@ def release_email(conn, email: str, user_id: int | None = None) -> None:
 # --------------------------------------------------------------------------- membership
 
 def grant_membership(conn, user_id: int, via: str, invited_by: int | None = None) -> None:
-    conn.execute(
+    cur = conn.execute(
         """UPDATE users SET member = 1, member_since = datetime('now'), member_via = ?,
                   invited_by = COALESCE(?, invited_by), invite_code = NULL
            WHERE id = ? AND member = 0""",
         (via, invited_by, user_id),
     )
-    notify(conn, user_id, "member", actor_id=invited_by)
+    if cur.rowcount:  # already a member: nothing changed, nothing to announce
+        notify(conn, user_id, "member", actor_id=invited_by)
 
 
 def use_invite(conn, code: str, user_id: int) -> int | None:
