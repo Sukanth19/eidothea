@@ -346,6 +346,13 @@ a.chip.on:hover { color: var(--bg); }
   .share-preview { width: 42%; max-width: 180px; align-self: center; }
 }
 
+/* ---------- Footer & plain pages ---------- */
+.footer-links { display: inline-flex; gap: 1.2rem; align-items: center; }
+.footer-links a { color: var(--muted); }
+.prose { max-width: 70ch; }
+.prose li { margin-bottom: .5em; }
+.prose code { color: var(--amber); }
+
 /* ---------- Writer (story editor) ---------- */
 /* The editor takes the whole screen, like a manuscript on a desk */
 body:has(.writer) .site-header, body:has(.writer) .site-footer { display: none; }

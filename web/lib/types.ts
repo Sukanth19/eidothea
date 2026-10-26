@@ -14,6 +14,8 @@ export interface User {
   username: string;
   role: Role;
   created_at: string;
+  /** May open /insights: the overseer, plus whoever they let in */
+  insights: boolean;
 }
 
 interface StoryBase {
@@ -22,6 +24,7 @@ interface StoryBase {
   subtitle: string;
   author: string | null;
   author_id: number | null;
+  author_public: boolean;
   tags: string[];
   categories: string[];
   /** Readers' 1-10 scores, blended with the dataset's rating for imported stories */
@@ -88,4 +91,60 @@ export interface Stats {
 export interface ManagedUser extends User {
   story_count: number;
   can_manage: boolean;
+}
+
+export interface Profile {
+  username: string;
+  role: Role;
+  created_at: string;
+  display_name: string;
+  bio: string;
+  instagram: string;
+  profile_public: boolean;
+  story_count?: number;
+}
+
+export interface InsightWindow {
+  views: number;
+  visitors: number;
+  signups: number;
+}
+
+export interface Insights {
+  days: number;
+  today: InsightWindow;
+  week: InsightWindow;
+  month: InsightWindow;
+  daily: { day: string; visitors: number; views: number; signups: number }[];
+  top_stories: { id: number; title: string; views: number; readers: number }[];
+  sources: { source: string; visitors: number }[];
+  devices: { device: string; visitors: number }[];
+  heard_from: { source: string; users: number }[];
+  new_users: { id: number; username: string; created_at: string; source: string | null; landing: string | null }[];
+  totals: { users: number; community_stories: number; comments: number; ratings: number };
+}
+
+export interface InsightUser {
+  id: number;
+  username: string;
+  role: Role;
+  created_at: string;
+  last_seen_at: string | null;
+  source: string | null;
+  landing: string | null;
+  display_name: string;
+  insights: boolean;
+  profile_public: boolean;
+  stories: number;
+  drafts: number;
+  comments: number;
+  ratings: number;
+}
+
+export interface InsightUserDetail extends InsightUser {
+  bio: string;
+  instagram: string;
+  average_rating_given: number | null;
+  recent_stories: { id: number; title: string; status: "draft" | "published"; published_at: string; updated_at: string | null }[];
+  recent_comments: { id: number; body: string; created_at: string; story_id: number; story_title: string }[];
 }
