@@ -346,6 +346,15 @@ a.chip.on:hover { color: var(--bg); }
   .share-preview { width: 42%; max-width: 180px; align-self: center; }
 }
 
+/* ---------- Profiles ---------- */
+.profile-head { border-bottom: 1px dashed var(--line); padding-bottom: 1.2rem; margin-bottom: 2rem; }
+.profile-head .meta { display: flex; flex-wrap: wrap; gap: .3rem 1.2rem; color: var(--muted); font-family: var(--term); font-size: 1.15rem; }
+.profile-bio { max-width: 65ch; margin: 1rem 0 0; }
+.profile-form { max-width: 620px; margin-inline: 0; }
+.check { display: flex; gap: .7rem; align-items: flex-start; text-transform: none; letter-spacing: 0; font-size: .95rem; color: var(--text); cursor: pointer; margin-bottom: 1rem; }
+.check input { width: auto; margin: .35rem 0 0; accent-color: var(--green); }
+.check .hint { display: block; }
+
 /* ---------- Footer & plain pages ---------- */
 .footer-links { display: inline-flex; gap: 1.2rem; align-items: center; }
 .footer-links a { color: var(--muted); }

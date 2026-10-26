@@ -27,7 +27,10 @@ export default async function MyStoriesPage({ searchParams }: { searchParams: Pr
             {user.username} · <span className={`role ${user.role}`}>{ROLE_LABEL[user.role].toUpperCase()}</span>
           </span>
         </div>
-        <Link href="/stories/new" className="btn">+ NEW STORY</Link>
+        <span style={{ display: "inline-flex", gap: ".6rem", flexWrap: "wrap" }}>
+          <Link href="/me/profile" className="btn ghost">EDIT PROFILE</Link>
+          <Link href="/stories/new" className="btn">+ NEW STORY</Link>
+        </span>
       </div>
 
       <div className="chips quick" style={{ marginBottom: "1.2rem" }}>

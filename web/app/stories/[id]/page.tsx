@@ -68,7 +68,14 @@ export default async function StoryPage({ params, searchParams }: Props) {
         <h1 style={{ marginTop: ".5rem" }}><ScrambleText text={story.title || "Untitled draft"} duration={700} /></h1>
         {story.subtitle && <p className="subtitle">{story.subtitle}</p>}
         <div className="meta">
-          <span>BY <b>{story.author ?? "Unknown author"}</b></span>
+          <span>
+            BY{" "}
+            {story.author_public && story.author ? (
+              <Link href={`/u/${encodeURIComponent(story.author)}`}><b>{story.author}</b></Link>
+            ) : (
+              <b>{story.author ?? "Unknown author"}</b>
+            )}
+          </span>
           <span>{formatDate(story.published_at)}</span>
           <span>{story.reading_minutes} MIN READ</span>
           {story.rating != null && (
