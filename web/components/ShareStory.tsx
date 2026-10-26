@@ -36,6 +36,7 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
   const [canShareFiles, setCanShareFiles] = useState(false);
   const [canShareLinks, setCanShareLinks] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [linkReady, setLinkReady] = useState(false);
   const [copied, setCopied] = useState(false);
   const [mounted, setMounted] = useState(false);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -96,7 +97,13 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
     }
   }
 
-  function openInstagram() {
+  async function openInstagram() {
+    // Stories can't carry a link inside the image; the poster adds Instagram's Link sticker.
+    // Copy the link now so the sticker is a paste away.
+    try {
+      await navigator.clipboard.writeText(pageUrl());
+      setLinkReady(true);
+    } catch {}
     if (platform === "android") {
       window.location.href = INSTAGRAM_ANDROID;
       return;
@@ -161,8 +168,13 @@ export function ShareStory({ storyId, title, label = "SHARE", autoOpen = false, 
                         <span className="step">2</span> OPEN INSTAGRAM
                       </button>
                       <p className="hint">
-                        Instagram opens on the story camera. Tap the gallery: the card is your newest photo. Post it or don&apos;t, it&apos;s up to you.
+                        Instagram opens on the story camera. Tap the gallery: the card is your newest photo.
                         {platform === "ios" && " To save, pick “Save Image” in the menu that pops up."}
+                      </p>
+                      <p className={`hint link-step${linkReady ? " ready" : ""}`}>
+                        <b>{linkReady ? "✓ Story link copied." : "Make it clickable:"}</b> Opening Instagram copies the story&apos;s link. In the editor,
+                        tap the <b>sticker</b> button, choose <b>LINK</b>, paste, and set the sticker text to something like <b>READ THE STORY</b>.
+                        Anyone who taps it lands right on this story.
                       </p>
                     </>
                   ) : (

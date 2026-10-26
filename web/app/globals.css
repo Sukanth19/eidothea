@@ -34,6 +34,7 @@ body {
   /* Phones in landscape put the notch on a side */
   padding-inline: max(16px, env(safe-area-inset-left)) max(16px, env(safe-area-inset-right));
   -webkit-text-size-adjust: 100%;
+  -webkit-tap-highlight-color: rgba(143, 224, 138, .15);
 }
 
 a { color: var(--green); text-decoration: none; }
@@ -331,6 +332,8 @@ a.chip.on:hover { color: var(--bg); }
 .share-ig h3 { font-size: 1.05rem; }
 .share-ig .btn, .share-ig button { justify-content: center; }
 .share-ig .step { display: inline-grid; place-items: center; width: 1.4em; height: 1.4em; border: 1px solid currentColor; border-radius: 50%; font-size: .85em; line-height: 1; }
+.share-ig .link-step { border-top: 1px dashed var(--line); padding-top: .6rem; }
+.share-ig .link-step.ready b:first-child { color: var(--green); }
 .share-qr { display: flex; gap: 1rem; align-items: center; }
 .share-qr img { flex: none; width: 132px; height: 132px; image-rendering: pixelated; }
 .share-sites { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .3rem; }
