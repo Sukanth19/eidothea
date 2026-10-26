@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useRef } from "react";
 import { ScrambleText } from "./ScrambleText";
 import { Typewriter } from "./Typewriter";
+import { Whisper } from "./Whisper";
 
 const LINES = [
   "3,000+ stories recovered from the dark corners of the internet.",
@@ -13,28 +13,13 @@ const LINES = [
 ];
 
 export function Hero({ loggedIn }: { loggedIn: boolean }) {
-  const ref = useRef<HTMLElement>(null);
-
-  // The cursor is a flashlight: the hidden message only shows where it points
-  function onMove(e: React.PointerEvent) {
-    const r = ref.current!.getBoundingClientRect();
-    ref.current!.style.setProperty("--x", `${e.clientX - r.left}px`);
-    ref.current!.style.setProperty("--y", `${e.clientY - r.top}px`);
-  }
-
   return (
-    <section ref={ref} className="hero" onPointerMove={onMove}>
-      <div className="flashlight" aria-hidden="true">
-        IT KNOWS
-        <br />
-        YOU&apos;RE READING
-      </div>
-
+    <Whisper className="hero" message={<>IT KNOWS<br />YOU&apos;RE READING</>}>
       <div className="kicker rise" style={{ "--i": 4 } as React.CSSProperties}>
         RECOVERED FROM THE STACKS
       </div>
       <h1>
-        <ScrambleText text="EIDOTHEA" duration={1400} />
+        <ScrambleText text="EIDOTHEA" duration={1400} haunt />
       </h1>
       <Typewriter lines={LINES} />
       <div className="actions rise" style={{ "--i": 12 } as React.CSSProperties}>
@@ -44,6 +29,6 @@ export function Hero({ loggedIn }: { loggedIn: boolean }) {
           {loggedIn ? "SUBMIT A STORY" : "JOIN AND WRITE"}
         </Link>
       </div>
-    </section>
+    </Whisper>
   );
 }

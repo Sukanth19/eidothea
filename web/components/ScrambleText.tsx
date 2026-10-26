@@ -2,24 +2,30 @@
 
 import { useReducedMotion } from "motion/react";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useFx } from "./Atmosphere";
 
 const GLYPHS = "†‡§¶ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const INTRUSIONS = ["BEHIND YOU", "LET ME OUT", "IT SEES YOU", "STILL HERE", "WAKE UP", "HELP ME"];
 
-/** Text that settles out of a jumble of letters on mount, and again on hover. */
+/** Text that settles out of a jumble of letters on mount, and again on hover.
+ *  With haunt, it very rarely flashes something else for a moment. */
 export function ScrambleText({
   text,
   className,
   duration = 900,
   onMount = true,
+  haunt = false,
 }: {
   text: string;
   className?: string;
   duration?: number;
   onMount?: boolean;
+  haunt?: boolean;
 }) {
   const [shown, setShown] = useState(text);
   const frame = useRef<number>(0);
   const reduced = useReducedMotion();
+  const { fx } = useFx();
 
   const run = useCallback(() => {
     if (reduced) return;
@@ -43,6 +49,27 @@ export function ScrambleText({
     if (onMount) run();
     return () => cancelAnimationFrame(frame.current);
   }, [text, onMount, run]);
+
+  useEffect(() => {
+    if (!haunt || !fx || reduced) return;
+    let timer: ReturnType<typeof setTimeout>;
+    const schedule = () => {
+      timer = setTimeout(() => {
+        if (!document.hidden && Math.random() < 0.4) {
+          setShown(INTRUSIONS[Math.floor(Math.random() * INTRUSIONS.length)]);
+          timer = setTimeout(() => {
+            setShown(text);
+            schedule();
+          }, 160);
+        } else schedule();
+      }, 30000 + Math.random() * 60000);
+    };
+    schedule();
+    return () => {
+      clearTimeout(timer);
+      setShown(text);
+    };
+  }, [haunt, fx, reduced, text]);
 
   return (
     <span className={className} onMouseEnter={run} aria-label={text}>

@@ -8,9 +8,13 @@ import { ShareStory } from "@/components/ShareStory";
 import { Reader } from "@/components/Reader";
 import { ScrambleText } from "@/components/ScrambleText";
 import { Rating } from "@/components/StoryCard";
+import { Whisper } from "@/components/Whisper";
 import { excerpt, formatDate } from "@/lib/format";
 import { apiGet, currentUser } from "@/lib/server-api";
 import type { Comment, Story } from "@/lib/types";
+
+// Scrawled behind the end of each story, found only by the cursor's light
+const ENDINGS = ["IT READ THIS TOO", "YOU WEREN'T READING ALONE", "DON'T LOOK BEHIND YOU", "IT FOLLOWED YOU HERE", "NOW IT KNOWS YOUR NAME"];
 
 type Props = { params: Promise<{ id: string }>; searchParams?: Promise<{ published?: string; share?: string }> };
 
@@ -65,7 +69,7 @@ export default async function StoryPage({ params, searchParams }: Props) {
           FILE #{String(story.id).padStart(4, "0")} ·{" "}
           <span className={`badge ${story.source}`}>{story.source === "user" ? "COMMUNITY" : "CLASSIC ARCHIVE"}</span>
         </div>
-        <h1 style={{ marginTop: ".5rem" }}><ScrambleText text={story.title || "Untitled draft"} duration={700} /></h1>
+        <h1 style={{ marginTop: ".5rem" }}><ScrambleText text={story.title || "Untitled draft"} duration={700} haunt={!draft} /></h1>
         {story.subtitle && <p className="subtitle">{story.subtitle}</p>}
         <div className="meta">
           <span>
@@ -109,7 +113,9 @@ export default async function StoryPage({ params, searchParams }: Props) {
         </p>
       )}
 
-      <div className="end-mark">— NOTHING MORE WAS FOUND —</div>
+      <Whisper className="end-whisper" message={ENDINGS[story.id % ENDINGS.length]}>
+        <div className="end-mark">— NOTHING MORE WAS FOUND —</div>
+      </Whisper>
 
       {story.tags.length > 0 && (
         <div className="chips" style={{ justifyContent: "center" }}>

@@ -4,6 +4,7 @@ import { MotionConfig } from "motion/react";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const FX_KEY = "eidothea.fx";
+const CALLED_KEY = "eidothea.called";
 
 const FxContext = createContext<{ fx: boolean; toggle: () => void }>({ fx: true, toggle: () => {} });
 export const useFx = () => useContext(FxContext);
@@ -54,6 +55,37 @@ export function Atmosphere({ children }: { children: React.ReactNode }) {
     };
     schedule();
     return () => clearTimeout(timer);
+  }, [fx]);
+
+  // Leave the tab and, once a session, it asks you to come back
+  useEffect(() => {
+    if (!fx) return;
+    let title = "";
+    let timer: ReturnType<typeof setTimeout>;
+    const onVisibility = () => {
+      clearTimeout(timer);
+      if (document.hidden) {
+        try {
+          if (sessionStorage.getItem(CALLED_KEY)) return;
+        } catch {}
+        timer = setTimeout(() => {
+          title = document.title;
+          document.title = "come back…";
+          try {
+            sessionStorage.setItem(CALLED_KEY, "1");
+          } catch {}
+        }, 4000);
+      } else if (title) {
+        document.title = title;
+        title = "";
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener("visibilitychange", onVisibility);
+      if (title) document.title = title;
+    };
   }, [fx]);
 
   return (
