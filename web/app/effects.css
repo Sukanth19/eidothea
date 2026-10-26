@@ -41,9 +41,9 @@
 .page-in { animation: rise-in .45s cubic-bezier(.16, 1, .3, 1) both; }
 .rise { animation: rise-in .5s cubic-bezier(.16, 1, .3, 1) both; animation-delay: calc(var(--i, 0) * 55ms); }
 
-/* Reader paragraphs: hidden only once JS has armed the observer */
-.story-body.armed p { opacity: 0; transform: translateY(14px); transition: opacity .7s ease-out, transform .7s ease-out; }
-.story-body.armed p.seen { opacity: 1; transform: none; }
+/* Reader blocks: hidden only once JS has armed the observer */
+.story-body.armed > * { opacity: 0; transform: translateY(14px); transition: opacity .7s ease-out, transform .7s ease-out; }
+.story-body.armed > .seen { opacity: 1; transform: none; }
 
 .flicker { animation: flicker 7s infinite; }
 @keyframes flicker {
@@ -97,7 +97,7 @@ html[data-fx="off"] .glitch::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .static, .flicker, .caret, .card:hover::after, .page-in, .rise { animation: none; }
-  .story-body.armed p { opacity: 1; transform: none; transition: none; }
+  .story-body.armed > * { opacity: 1; transform: none; transition: none; }
   .glitch::before, .glitch::after { display: none; }
   html.hiccup main.view { animation: none; }
 }

@@ -257,7 +257,16 @@ button.chip.on { color: var(--bg); background: var(--amber); border-color: var(-
 
 .story-body { font-size: var(--reader-size, 1.02rem); line-height: 1.9; color: #d7dfcf; }
 .story-body p { margin: 0 0 1.25em; }
-.story-body p:first-child::first-letter { font-family: var(--doc); float: left; font-size: 3.6em; line-height: .85; padding: .08em .12em 0 0; color: var(--red); }
+.story-body strong { font-weight: 600; color: #eef3e8; }
+.story-body u { text-decoration-color: var(--amber); text-underline-offset: .2em; }
+.story-body h2 { margin: 2em 0 .8em; }
+.story-body h3 { margin: 1.6em 0 .7em; color: var(--text); }
+.story-body blockquote { margin: 0 0 1.25em; padding: .9rem 1.2rem; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--amber); color: #e4dccb; }
+.story-body blockquote p { margin: 0 0 .6em; }
+.story-body blockquote p:last-child { margin: 0; }
+.story-body hr { border: 0; margin: 2.2em 0; height: 1em; overflow: visible; }
+.story-body hr::after { content: "✶ ✶ ✶"; display: block; text-align: center; color: var(--muted); letter-spacing: 1.2em; padding-left: 1.2em; line-height: 1; }
+.story-body > p:first-child::first-letter { font-family: var(--doc); float: left; font-size: 3.6em; line-height: .85; padding: .08em .12em 0 0; color: var(--red); }
 
 .notice { border: 1px dashed var(--amber); color: var(--amber); padding: .7rem 1rem; font-size: .88rem; margin: 2rem 0; }
 .end-mark { text-align: center; font-family: var(--term); color: var(--muted); font-size: 1.3rem; letter-spacing: .4em; margin: 3rem 0 1rem; }

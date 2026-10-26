@@ -2,19 +2,19 @@
 
 import { motion, useScroll, useSpring } from "motion/react";
 import { useEffect, useRef, useState } from "react";
-import { paragraphs } from "@/lib/format";
+import { Markup } from "./Markup";
 
 const SIZE_KEY = "eidothea.reader-size";
 const SIZES = [0.92, 1.02, 1.14, 1.28];
 
-/** Story body: scroll-progress bar, adjustable text size, paragraphs that surface as you reach them. */
+/** Story body: scroll-progress bar, adjustable text size, blocks that surface as you reach them. */
 export function Reader({ body }: { body: string }) {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 120, damping: 30, restDelta: 0.001 });
   const [size, setSize] = useState(1);
   const bodyRef = useRef<HTMLDivElement>(null);
 
-  // Paragraphs surface as they scroll into view. The hiding class is only added
+  // Blocks surface as they scroll into view. The hiding class is only added
   // here, so without JS (or with reduced motion) the text is simply there.
   useEffect(() => {
     const el = bodyRef.current;
@@ -28,7 +28,7 @@ export function Reader({ body }: { body: string }) {
       }),
       { rootMargin: "0px 0px -8% 0px" },
     );
-    el.querySelectorAll("p").forEach(p => io.observe(p));
+    el.querySelectorAll(":scope > *").forEach(b => io.observe(b));
     el.classList.add("armed");
     return () => io.disconnect();
   }, [body]);
@@ -58,9 +58,7 @@ export function Reader({ body }: { body: string }) {
         <button type="button" className="ghost" onClick={() => changeSize(1)} disabled={size === SIZES.length - 1} aria-label="Larger text">A+</button>
       </div>
       <div ref={bodyRef} className="story-body" style={{ "--reader-size": `${SIZES[size]}rem` } as React.CSSProperties}>
-        {paragraphs(body).map((p, i) => (
-          <p key={i}>{p}</p>
-        ))}
+        <Markup text={body} />
       </div>
     </>
   );

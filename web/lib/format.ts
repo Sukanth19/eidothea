@@ -1,3 +1,5 @@
+import { plainText } from "./markup";
+
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 
 /** "2020-02-20" or "2026-10-24 19:30:00" → "20 FEB 2020" (no timezone shifts). */
@@ -8,12 +10,8 @@ export function formatDate(s: string | null | undefined): string {
   return `${String(d).padStart(2, "0")} ${MONTHS[m - 1]} ${y}`;
 }
 
-export function paragraphs(body: string): string[] {
-  return body.split(/\n+/).map(p => p.trim()).filter(Boolean);
-}
-
 export function excerpt(text: string, max = 220): string {
-  const flat = text.replace(/\s+/g, " ").trim();
+  const flat = plainText(text).replace(/\s+/g, " ").trim();
   if (flat.length <= max) return flat;
   return flat.slice(0, flat.lastIndexOf(" ", max)) + "…";
 }
