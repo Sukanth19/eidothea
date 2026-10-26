@@ -2,12 +2,17 @@
 
 import hashlib
 import hmac
+import os
 import secrets
 import sqlite3
 from datetime import datetime, timedelta, timezone
 
 SESSION_COOKIE = "eidothea_session"
 SESSION_DAYS = 30
+
+# The first this-many people to confirm their email become members automatically
+FOUNDING_MEMBERS = int(os.environ.get("FOUNDING_MEMBERS", "300"))
+INVITES_PER_MEMBER = int(os.environ.get("INVITES_PER_MEMBER", "3"))
 
 # Higher level = more power. Users can only manage people strictly below them.
 ROLE_LEVEL = {"user": 0, "mod": 1, "admin": 2, "overseer": 3}
@@ -30,7 +35,7 @@ def verify_password(password: str, stored: str) -> bool:
     return hmac.compare_digest(digest.hex(), digest_hex)
 
 
-def _token_hash(token: str) -> str:
+def token_hash(token: str) -> str:
     # Only a hash of the token is stored, so a leaked database can't be used to log in.
     return hashlib.sha256(token.encode()).hexdigest()
 
@@ -40,14 +45,14 @@ def create_session(conn: sqlite3.Connection, user_id: int) -> str:
     expires = datetime.now(timezone.utc) + timedelta(days=SESSION_DAYS)
     conn.execute(
         "INSERT INTO sessions (token_hash, user_id, expires_at) VALUES (?, ?, ?)",
-        (_token_hash(token), user_id, expires.isoformat()),
+        (token_hash(token), user_id, expires.isoformat()),
     )
     conn.commit()
     return token
 
 
 def delete_session(conn: sqlite3.Connection, token: str) -> None:
-    conn.execute("DELETE FROM sessions WHERE token_hash = ?", (_token_hash(token),))
+    conn.execute("DELETE FROM sessions WHERE token_hash = ?", (token_hash(token),))
     conn.commit()
 
 
@@ -55,15 +60,30 @@ def user_for_token(conn: sqlite3.Connection, token: str | None) -> sqlite3.Row |
     if not token:
         return None
     return conn.execute(
-        """SELECT u.id, u.username, u.role, u.created_at, u.insights, u.last_seen_at
+        """SELECT u.id, u.username, u.role, u.created_at, u.insights, u.last_seen_at,
+                  u.email, u.email_verified_at, u.member, u.member_since
            FROM sessions s JOIN users u ON u.id = s.user_id
            WHERE s.token_hash = ? AND s.expires_at > ?""",
-        (_token_hash(token), datetime.now(timezone.utc).isoformat()),
+        (token_hash(token), datetime.now(timezone.utc).isoformat()),
     ).fetchone()
 
 
 def level(user) -> int:
     return ROLE_LEVEL[user["role"]] if user else -1
+
+
+def is_member(user) -> bool:
+    """Members may post, comment, rate and vote. Staff always may."""
+    return bool(user) and (level(user) >= ROLE_LEVEL["mod"] or bool(user["member"]))
+
+
+def tier(user) -> str:
+    """visitor (no account), unverified (email not confirmed), reader or member."""
+    if not user:
+        return "visitor"
+    if is_member(user):
+        return "member"
+    return "reader" if user["email_verified_at"] else "unverified"
 
 
 def can_edit_story(user, story) -> bool:

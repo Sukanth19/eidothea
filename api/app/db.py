@@ -84,6 +84,40 @@ CREATE TABLE IF NOT EXISTS analytics_salt (
     salt TEXT NOT NULL
 );
 
+-- One-time links sent by email: confirming an address, resetting a password.
+-- Only a hash of the token is kept; `email` is the address being confirmed.
+CREATE TABLE IF NOT EXISTS email_tokens (
+    token_hash TEXT PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    purpose    TEXT NOT NULL CHECK (purpose IN ('verify', 'reset')),
+    email      TEXT NOT NULL,
+    expires_at TEXT NOT NULL
+);
+
+-- Each member can invite a few people; who invited whom is kept for accountability.
+CREATE TABLE IF NOT EXISTS invites (
+    code       TEXT PRIMARY KEY,
+    inviter_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    used_by    INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    used_at    TEXT
+);
+
+CREATE INDEX IF NOT EXISTS invites_inviter ON invites(inviter_id);
+
+-- Readers asking to become members; mods decide.
+CREATE TABLE IF NOT EXISTS applications (
+    id         INTEGER PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    note       TEXT NOT NULL,
+    status     TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    decided_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    decided_at TEXT
+);
+
+CREATE INDEX IF NOT EXISTS applications_status ON applications(status);
+
 -- Genres writers can pick on top of the dataset's categories. Mods add more.
 CREATE TABLE IF NOT EXISTS genres (
     name       TEXT PRIMARY KEY COLLATE NOCASE,
@@ -112,6 +146,13 @@ MIGRATIONS = {
         "bio": "TEXT NOT NULL DEFAULT ''",
         "instagram": "TEXT NOT NULL DEFAULT ''",
         "profile_public": "INTEGER NOT NULL DEFAULT 0",
+        "email": "TEXT",  # set at sign-up; changes only once a new address is confirmed
+        "email_verified_at": "TEXT",
+        "member": "INTEGER NOT NULL DEFAULT 0",  # may post, comment, rate and vote (staff always may)
+        "member_since": "TEXT",
+        "member_via": "TEXT",  # founding, invite, approved, granted or grandfathered
+        "invited_by": "INTEGER",
+        "invite_code": "TEXT",  # the invite they signed up with, used up once their email is confirmed
     },
     "stories": {
         "subtitle": "TEXT NOT NULL DEFAULT ''",
@@ -145,11 +186,17 @@ def connect() -> sqlite3.Connection:
 def init() -> None:
     with connect() as conn:
         conn.executescript(SCHEMA)
+        added = set()
         for table, columns in MIGRATIONS.items():
             have = {r["name"] for r in conn.execute(f"PRAGMA table_info({table})")}
             for name, decl in columns.items():
                 if name not in have:
                     conn.execute(f"ALTER TABLE {table} ADD COLUMN {name} {decl}")
+                    added.add((table, name))
+        if ("users", "member") in added:
+            # Everyone who joined before membership existed keeps what they could do
+            conn.execute("UPDATE users SET member = 1, member_since = created_at, member_via = 'grandfathered'")
+        conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users(email COLLATE NOCASE) WHERE email IS NOT NULL")
         conn.execute("CREATE INDEX IF NOT EXISTS stories_status ON stories(status)")
         # Only into an empty table, so a genre a mod removed stays removed
         if not conn.execute("SELECT 1 FROM genres LIMIT 1").fetchone():

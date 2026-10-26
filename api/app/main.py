@@ -1,33 +1,19 @@
 """Eidothea API. Run with: uvicorn app.main:app --reload (from api/)."""
 
 import json
-import os
 import sqlite3
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
-from fastapi import BackgroundTasks, Cookie, Depends, FastAPI, HTTPException, Query, Response
+from fastapi import Depends, FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
-from . import db, insights
+from . import accounts, db, guard, insights
+from .accounts import MemberUser, grant_membership, user_json
 from .deps import Conn, CurrentUser, ModUser, OptionalUser
 from .gaming import with_gaming_category
-from .security import (
-    ROLE_LEVEL,
-    SESSION_COOKIE,
-    SESSION_DAYS,
-    assignable_roles,
-    can_edit_story,
-    can_manage_user,
-    can_view_insights,
-    create_session,
-    delete_session,
-    hash_password,
-    level,
-    verify_password,
-)
+from .security import ROLE_LEVEL, assignable_roles, can_edit_story, can_manage_user, level
 
-COOKIE_SECURE = os.environ.get("COOKIE_SECURE", "0") == "1"
 WORDS_PER_MINUTE = 200
 
 
@@ -38,37 +24,11 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title="Eidothea", lifespan=lifespan)
+app.include_router(accounts.router)
 app.include_router(insights.router)
 
 
-def user_json(u) -> dict:
-    return {
-        "id": u["id"],
-        "username": u["username"],
-        "role": u["role"],
-        "created_at": u["created_at"],
-        "insights": can_view_insights(u),
-    }
-
-
 # --------------------------------------------------------------------------- models
-
-class Credentials(BaseModel):
-    username: str = Field(min_length=3, max_length=24, pattern=r"^[A-Za-z0-9_-]+$")
-    password: str = Field(min_length=8, max_length=128)
-
-
-class Registration(Credentials):
-    # Both optional: the answer to "how did you hear about us?" and where their first visit came from
-    source: str | None = Field(default=None, max_length=80)
-    landing: str | None = Field(default=None, max_length=120)
-
-    @field_validator("source", "landing")
-    @classmethod
-    def tidy(cls, v: str | None) -> str | None:
-        v = " ".join((v or "").split())
-        return v or None
-
 
 Status = Literal["draft", "published"]
 
@@ -131,6 +91,10 @@ class VoteIn(BaseModel):
 
 class RoleIn(BaseModel):
     role: Literal["user", "mod", "admin"]
+
+
+class MembershipIn(BaseModel):
+    member: bool
 
 
 class GenreIn(BaseModel):
@@ -242,53 +206,6 @@ def rating_json(conn, story_id: int, user) -> dict:
     }
 
 
-def set_session_cookie(response: Response, token: str) -> None:
-    response.set_cookie(
-        SESSION_COOKIE, token,
-        max_age=SESSION_DAYS * 86400, httponly=True, samesite="lax", secure=COOKIE_SECURE, path="/",
-    )
-
-
-# --------------------------------------------------------------------------- auth
-
-@app.post("/api/auth/register", status_code=201)
-def register(creds: Registration, response: Response, conn: Conn, tasks: BackgroundTasks):
-    try:
-        cur = conn.execute(
-            "INSERT INTO users (username, password_hash, source, landing) VALUES (?, ?, ?, ?)",
-            (creds.username, hash_password(creds.password), creds.source, creds.landing),
-        )
-    except sqlite3.IntegrityError:
-        raise HTTPException(409, "That username is taken.")
-    conn.commit()
-    tasks.add_task(insights.announce_signup, creds.username, creds.source, creds.landing)
-    set_session_cookie(response, create_session(conn, cur.lastrowid))
-    user = conn.execute("SELECT * FROM users WHERE id = ?", (cur.lastrowid,)).fetchone()
-    return {"user": user_json(user)}
-
-
-@app.post("/api/auth/login")
-def login(creds: Credentials, response: Response, conn: Conn):
-    user = conn.execute("SELECT * FROM users WHERE username = ?", (creds.username,)).fetchone()
-    if not user or not verify_password(creds.password, user["password_hash"]):
-        raise HTTPException(401, "Invalid username or password.")
-    set_session_cookie(response, create_session(conn, user["id"]))
-    return {"user": user_json(user)}
-
-
-@app.post("/api/auth/logout")
-def logout(response: Response, conn: Conn, eidothea_session: Annotated[str | None, Cookie()] = None):
-    if eidothea_session:
-        delete_session(conn, eidothea_session)
-    response.delete_cookie(SESSION_COOKIE, path="/")
-    return {"ok": True}
-
-
-@app.get("/api/auth/me")
-def me(user: OptionalUser):
-    return {"user": user_json(user) if user else None}
-
-
 # --------------------------------------------------------------------------- stories
 
 @app.get("/api/stories")
@@ -363,9 +280,10 @@ def get_story(story_id: int, conn: Conn, user: OptionalUser):
 
 
 @app.post("/api/stories", status_code=201)
-def create_story(story: StoryIn, conn: Conn, user: CurrentUser):
+def create_story(story: StoryIn, conn: Conn, user: MemberUser):
     if story.status == "published":
         check_publishable(story.title, story.body)
+        guard.check_daily_cap(conn, user, "stories")
     categories = with_gaming_category(story.categories, story.title, story.tags, story.body)
     cur = conn.execute(
         """INSERT INTO stories (title, subtitle, body, author_id, tags, categories, reading_minutes, source, status)
@@ -378,7 +296,7 @@ def create_story(story: StoryIn, conn: Conn, user: CurrentUser):
 
 
 @app.patch("/api/stories/{story_id}")
-def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: CurrentUser):
+def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser):
     existing = fetch_story(conn, story_id, user)
     if not can_edit_story(user, existing):
         raise HTTPException(403, "You can only edit your own stories.")
@@ -391,6 +309,8 @@ def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: CurrentUser
     status = changes.get("status", existing["status"])
     if status == "published":
         check_publishable(changes.get("title", existing["title"]), changes.get("body", existing["body"]))
+        if existing["status"] == "draft":
+            guard.check_daily_cap(conn, user, "stories")
     if "body" in changes:
         changes["reading_minutes"] = reading_minutes(changes["body"])
         changes["truncated"] = 0
@@ -429,7 +349,7 @@ def delete_story(story_id: int, conn: Conn, user: CurrentUser):
 # --------------------------------------------------------------------------- ratings
 
 @app.put("/api/stories/{story_id}/rating")
-def rate_story(story_id: int, body: RatingIn, conn: Conn, user: CurrentUser):
+def rate_story(story_id: int, body: RatingIn, conn: Conn, user: MemberUser):
     if fetch_published(conn, story_id, user)["author_id"] == user["id"]:
         raise HTTPException(403, "You can't rate your own story.")
     conn.execute(
@@ -442,7 +362,7 @@ def rate_story(story_id: int, body: RatingIn, conn: Conn, user: CurrentUser):
 
 
 @app.delete("/api/stories/{story_id}/rating")
-def unrate_story(story_id: int, conn: Conn, user: CurrentUser):
+def unrate_story(story_id: int, conn: Conn, user: MemberUser):
     fetch_story(conn, story_id, user)
     conn.execute("DELETE FROM story_ratings WHERE story_id = ? AND user_id = ?", (story_id, user["id"]))
     conn.commit()
@@ -498,8 +418,9 @@ def list_comments(story_id: int, conn: Conn, user: OptionalUser, sort: Literal["
 
 
 @app.post("/api/stories/{story_id}/comments", status_code=201)
-def add_comment(story_id: int, comment: CommentIn, conn: Conn, user: CurrentUser):
+def add_comment(story_id: int, comment: CommentIn, conn: Conn, user: MemberUser):
     fetch_published(conn, story_id, user)
+    guard.check_daily_cap(conn, user, "comments")
     cur = conn.execute(
         "INSERT INTO comments (story_id, user_id, body) VALUES (?, ?, ?)", (story_id, user["id"], comment.body)
     )
@@ -517,7 +438,7 @@ def delete_comment(comment_id: int, conn: Conn, user: CurrentUser):
 
 
 @app.put("/api/comments/{comment_id}/vote")
-def vote_comment(comment_id: int, vote: VoteIn, conn: Conn, user: CurrentUser):
+def vote_comment(comment_id: int, vote: VoteIn, conn: Conn, user: MemberUser):
     fetch_comment(conn, comment_id, user)
     if vote.value:
         conn.execute(
@@ -625,6 +546,19 @@ def set_role(user_id: int, body: RoleIn, conn: Conn, actor: AdminUser):
     if not can_manage_user(actor, target) or body.role not in assignable_roles(actor):
         raise HTTPException(403, "You don't outrank them.")
     conn.execute("UPDATE users SET role = ? WHERE id = ?", (body.role, user_id))
+    conn.commit()
+    return user_json(fetch_user(conn, user_id))
+
+
+@app.patch("/api/users/{user_id}/membership")
+def set_membership(user_id: int, body: MembershipIn, conn: Conn, actor: AdminUser):
+    target = fetch_user(conn, user_id)
+    if not can_manage_user(actor, target):
+        raise HTTPException(403, "You don't outrank them.")
+    if body.member:
+        grant_membership(conn, user_id, "granted")
+    else:
+        conn.execute("UPDATE users SET member = 0 WHERE id = ?", (user_id,))
     conn.commit()
     return user_json(fetch_user(conn, user_id))
 
