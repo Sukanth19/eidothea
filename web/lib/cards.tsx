@@ -97,9 +97,11 @@ export function StoryCard({ story, host }: { story: Story; host: string }) {
         </div>
       )}
 
-      <div style={{ display: "flex", flexDirection: "column", marginTop: "auto", alignItems: "center", gap: 10 }}>
+      <div style={{ display: "flex", flexDirection: "column", marginTop: "auto", alignItems: "center", gap: 6 }}>
         <span style={{ fontFamily: "VT", fontSize: 120, color: C.green, letterSpacing: 14 }}>EIDOTHEA</span>
-        <span style={{ fontFamily: "VT", fontSize: 44, color: C.muted, letterSpacing: 4 }}>READ IT AT {host.toUpperCase()}</span>
+        <span style={{ fontFamily: "VT", fontSize: 34, color: C.muted, letterSpacing: 6, marginTop: 8 }}>READ IT AT</span>
+        {/* Lowercase, as people will type it, shrunk to fit one line (VT323 is ~0.45em per character) */}
+        <span style={{ fontFamily: "VT", fontSize: Math.min(48, Math.floor((880 / host.length - 2) / 0.45)), color: C.text, letterSpacing: 2 }}>{host.toLowerCase()}</span>
       </div>
     </div>
   );
