@@ -15,6 +15,8 @@ router = APIRouter()
 FINISHED_PROGRESS = 0.9
 FINISHED_SHARE_OF_TIME = 0.25
 TRENDING_DAYS = 14
+# Time with a story before it counts as started, for "continue reading"
+STARTED_SECONDS = 30
 
 # Recent activity per story, each event fading with age (halved after 3 days, a third after 6…).
 # Finished reads count most, then recommends; ratings above 5 lift a story and below 5 drag it; anonymous

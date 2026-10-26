@@ -293,6 +293,7 @@ a.chip.on:hover { color: var(--bg); }
 
 .reader-tools { display: flex; align-items: center; gap: .5rem; font-family: var(--caps); font-size: .9rem; color: var(--muted); margin-bottom: 1.5rem; }
 .reader-tools button { padding: 0 .55rem; font-size: .86rem; }
+.reader-tools .resume { margin-left: auto; padding: 0 .8rem; }
 
 .story-body { font-size: var(--reader-size, 1.02rem); line-height: 1.9; color: #e3d9c8; }
 /* The story sits on a sheet of old, stained paper; not while writing */

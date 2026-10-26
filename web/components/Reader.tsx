@@ -9,10 +9,11 @@ const SIZES = [0.92, 1.02, 1.14, 1.28];
 
 /** Story body: scroll-progress bar, adjustable text size, blocks that surface as you reach them.
  *  With `track` (a story id), reports how far the reader got and for how long. */
-export function Reader({ body, track }: { body: string; track?: number }) {
+export function Reader({ body, track, resume }: { body: string; track?: number; resume?: number }) {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 120, damping: 30, restDelta: 0.001 });
   const [size, setSize] = useState(1);
+  const [resumeAt, setResumeAt] = useState(resume);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   // Blocks surface as they scroll into view. The hiding class is only added
@@ -81,6 +82,15 @@ export function Reader({ body, track }: { body: string; track?: number }) {
     } catch {}
   }, []);
 
+  // Scrolls so the bottom of the screen is where they got to last time
+  function pickUp() {
+    const el = bodyRef.current;
+    if (!el || resumeAt === undefined) return;
+    const r = el.getBoundingClientRect();
+    window.scrollTo({ top: Math.max(0, window.scrollY + r.top + resumeAt * r.height - window.innerHeight * 0.85), behavior: "smooth" });
+    setResumeAt(undefined);
+  }
+
   function changeSize(delta: number) {
     const next = Math.min(SIZES.length - 1, Math.max(0, size + delta));
     setSize(next);
@@ -96,6 +106,9 @@ export function Reader({ body, track }: { body: string; track?: number }) {
         TEXT SIZE
         <button type="button" className="ghost" onClick={() => changeSize(-1)} disabled={size === 0} aria-label="Smaller text">A−</button>
         <button type="button" className="ghost" onClick={() => changeSize(1)} disabled={size === SIZES.length - 1} aria-label="Larger text">A+</button>
+        {resumeAt !== undefined && (
+          <button type="button" className="resume" onClick={pickUp}>↓ PICK UP AT {Math.round(resumeAt * 100)}%</button>
+        )}
       </div>
       <div ref={bodyRef} className="story-body" style={{ "--reader-size": `${SIZES[size]}rem` } as React.CSSProperties}>
         <Markup text={body} />

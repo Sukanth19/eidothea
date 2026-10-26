@@ -385,6 +385,19 @@ def for_you(conn: Conn, user: ReaderUser, limit: int = Query(6, ge=1, le=24)):
     return {"items": [story_json(r, user) for r in rows], "based_on": [c["cat"] for c in cats[:3]]}
 
 
+@app.get("/api/stories/continue")
+def continue_reading(conn: Conn, user: CurrentUser, limit: int = Query(3, ge=1, le=24)):
+    """Stories this reader got into but didn't finish, most recently read first."""
+    rows = conn.execute(
+        f"""SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt
+            FROM {STORY_FROM} JOIN reads rd ON rd.story_id = s.id AND rd.user_id = ?
+            WHERE s.status = 'published' AND NOT rd.finished AND rd.progress < ? AND rd.seconds >= ?
+            ORDER BY rd.last_at DESC LIMIT ?""",
+        (user["id"], reading.FINISHED_PROGRESS, reading.STARTED_SECONDS, limit),
+    ).fetchall()
+    return {"items": with_reads(conn, user, [story_json(r, user) for r in rows])}
+
+
 @app.get("/api/stories/random")
 def random_story(conn: Conn):
     row = conn.execute("SELECT id FROM stories WHERE status = 'published' ORDER BY random() LIMIT 1").fetchone()

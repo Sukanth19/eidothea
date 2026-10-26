@@ -3,7 +3,7 @@ import { CountUp } from "@/components/CountUp";
 import { Hero } from "@/components/Hero";
 import { StoryGrid } from "@/components/StoryCard";
 import { apiGet, currentUser } from "@/lib/server-api";
-import type { Category, ForYou, Stats, StoryPage } from "@/lib/types";
+import type { Category, ForYou, Stats, StoryPage, StorySummary } from "@/lib/types";
 
 export default async function Home() {
   const [user, stats, trending, top, fresh, categories] = await Promise.all([
@@ -14,9 +14,13 @@ export default async function Home() {
     apiGet<StoryPage>("/api/stories?source=user&per_page=3"),
     apiGet<Category[]>("/api/categories"),
   ]);
-  const [forYou, followed] = user?.email_verified
-    ? await Promise.all([apiGet<ForYou>("/api/stories/for-you?limit=3"), apiGet<StoryPage>("/api/stories?following=true&per_page=3")])
-    : [null, null];
+  const [forYou, followed, unfinished] = user?.email_verified
+    ? await Promise.all([
+        apiGet<ForYou>("/api/stories/for-you?limit=3"),
+        apiGet<StoryPage>("/api/stories?following=true&per_page=3"),
+        apiGet<{ items: StorySummary[] }>("/api/stories/continue?limit=3"),
+      ])
+    : [null, null, null];
 
   return (
     <>
@@ -29,6 +33,16 @@ export default async function Home() {
           <div className="stat"><div className="n"><CountUp to={stats.users} /></div><div className="l">Souls registered</div></div>
           <div className="stat"><div className="n"><CountUp to={Math.round(stats.minutes / 60)} /></div><div className="l">Hours of reading</div></div>
         </div>
+      )}
+
+      {unfinished && unfinished.items.length > 0 && (
+        <>
+          <div className="section-head">
+            <h2>Pick up where you left off</h2>
+            <span className="muted">it&apos;s still waiting for you</span>
+          </div>
+          <StoryGrid stories={unfinished.items} />
+        </>
       )}
 
       {followed && followed.items.length > 0 && (

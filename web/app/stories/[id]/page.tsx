@@ -123,7 +123,11 @@ export default async function StoryPage({ params, searchParams }: Props) {
       </header>
 
       <WarningGate warnings={ownStory ? [] : story.warnings}>
-        <Reader body={story.body} track={!draft && user?.email_verified ? story.id : undefined} />
+        <Reader
+          body={story.body}
+          track={!draft && user?.email_verified ? story.id : undefined}
+          resume={story.my_read && !story.my_read.finished && story.my_read.progress >= 0.15 ? story.my_read.progress : undefined}
+        />
       </WarningGate>
 
       {story.truncated && (
