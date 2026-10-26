@@ -11,7 +11,13 @@ export function Typewriter({ lines, speed = 45, hold = 2600 }: { lines: string[]
   const [erasing, setErasing] = useState(false);
 
   useEffect(() => {
-    if (reduced) return;
+    // Reduced motion: show the first line whole, but only after hydration (the server can't know)
+    if (reduced) {
+      setLine(0);
+      setCount(lines[0].length);
+      setErasing(false);
+      return;
+    }
     const full = lines[line];
     let delay = erasing ? speed / 2 : speed + Math.random() * 40;
     if (!erasing && count === full.length) delay = hold;
@@ -26,7 +32,7 @@ export function Typewriter({ lines, speed = 45, hold = 2600 }: { lines: string[]
     return () => clearTimeout(t);
   }, [count, erasing, line, lines, speed, hold, reduced]);
 
-  const text = reduced ? lines[0] : lines[line].slice(0, count);
+  const text = lines[line].slice(0, count);
   return (
     <p className="tagline" aria-live="off">
       {text}
