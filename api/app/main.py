@@ -5,10 +5,11 @@ import sqlite3
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
-from fastapi import Depends, FastAPI, HTTPException, Query, Response
+from fastapi import BackgroundTasks, Depends, FastAPI, HTTPException, Query, Response
 from pydantic import BaseModel, Field, field_validator
 
-from . import accounts, db, guard, insights, reading
+from . import accounts, db, guard, insights, reading, social
+from .notify import notify
 from .accounts import MemberUser, ReaderUser, grant_membership, user_json
 from .deps import Conn, CurrentUser, ModUser, OptionalUser
 from .gaming import with_gaming_category
@@ -27,6 +28,7 @@ app = FastAPI(title="Eidothea", lifespan=lifespan)
 app.include_router(accounts.router)
 app.include_router(insights.router)
 app.include_router(reading.router)
+app.include_router(social.router)
 
 
 # --------------------------------------------------------------------------- models
@@ -138,7 +140,8 @@ STORY_COLUMNS = f"""
     CASE WHEN s.rating IS NULL THEN r.total * 1.0 / r.n
          ELSE (s.rating * {ARCHIVE_WEIGHT} + COALESCE(r.total, 0)) / ({ARCHIVE_WEIGHT} + COALESCE(r.n, 0))
     END AS score,
-    (SELECT COUNT(*) FROM comments c WHERE c.story_id = s.id) AS comment_count
+    (SELECT COUNT(*) FROM comments c WHERE c.story_id = s.id) AS comment_count,
+    (SELECT COUNT(*) FROM recommends rc WHERE rc.story_id = s.id) AS recommend_count
 """
 
 
@@ -156,6 +159,7 @@ def story_json(row, user, *, body: bool = False) -> dict:
         "archive_rating": row["archive_rating"],
         "rating_count": row["rating_count"],
         "comment_count": row["comment_count"],
+        "recommend_count": row["recommend_count"],
         "reading_minutes": row["reading_minutes"],
         "source": row["source"],
         "truncated": bool(row["truncated"]),
@@ -219,6 +223,8 @@ def list_stories(
     source: Literal["all", "user", "import"] = "all",
     mine: bool = False,
     author: str = "",
+    recommended_by: str = "",
+    following: bool = False,
     status: Status = "published",
     page: int = Query(1, ge=1),
     per_page: int = Query(24, ge=1, le=60),
@@ -236,6 +242,15 @@ def list_stories(
     if author:
         where.append("u.username = ?")
         args.append(author)
+    if recommended_by:
+        where.append("""EXISTS (SELECT 1 FROM recommends rb JOIN users ru ON ru.id = rb.user_id
+                                WHERE rb.story_id = s.id AND ru.username = ?)""")
+        args.append(recommended_by)
+    if following:
+        if not user:
+            raise HTTPException(401, "You need to log in first.")
+        where.append("s.author_id IN (SELECT followee_id FROM follows WHERE follower_id = ?)")
+        args.append(user["id"])
     if mine or status == "draft":
         if not user:
             raise HTTPException(401, "You need to log in first.")
@@ -301,11 +316,12 @@ def get_story(story_id: int, conn: Conn, user: OptionalUser):
     out = story_json(fetch_story(conn, story_id, user), user, body=True)
     if user:
         out["my_rating"] = rating_json(conn, story_id, user)["my_rating"]
+        out["recommended"] = social.recommend_state(conn, story_id, user)["recommended"]
     return out
 
 
 @app.post("/api/stories", status_code=201)
-def create_story(story: StoryIn, conn: Conn, user: MemberUser):
+def create_story(story: StoryIn, conn: Conn, user: MemberUser, tasks: BackgroundTasks):
     if story.status == "published":
         check_publishable(story.title, story.body)
         guard.check_daily_cap(conn, user, "stories")
@@ -316,12 +332,14 @@ def create_story(story: StoryIn, conn: Conn, user: MemberUser):
         (story.title, story.subtitle, story.body, user["id"], json.dumps(story.tags), json.dumps(categories),
          reading_minutes(story.body), story.status),
     )
+    if story.status == "published":
+        social.announce_story(conn, cur.lastrowid, user["id"], tasks)
     conn.commit()
     return story_json(fetch_story(conn, cur.lastrowid, user), user, body=True)
 
 
 @app.patch("/api/stories/{story_id}")
-def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser):
+def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser, tasks: BackgroundTasks):
     existing = fetch_story(conn, story_id, user)
     if not can_edit_story(user, existing):
         raise HTTPException(403, "You can only edit your own stories.")
@@ -358,6 +376,8 @@ def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser)
         else "updated_at = datetime('now')"
     )
     conn.execute(f"UPDATE stories SET {assignments}, {stamp} WHERE id = ?", [*changes.values(), story_id])
+    if existing["status"] == "draft" and status == "published" and existing["author_id"]:
+        social.announce_story(conn, story_id, existing["author_id"], tasks)
     conn.commit()
     return story_json(fetch_story(conn, story_id, user), user, body=True)
 
@@ -444,11 +464,13 @@ def list_comments(story_id: int, conn: Conn, user: OptionalUser, sort: Literal["
 
 @app.post("/api/stories/{story_id}/comments", status_code=201)
 def add_comment(story_id: int, comment: CommentIn, conn: Conn, user: MemberUser):
-    fetch_published(conn, story_id, user)
+    story = fetch_published(conn, story_id, user)
     guard.check_daily_cap(conn, user, "comments")
     cur = conn.execute(
         "INSERT INTO comments (story_id, user_id, body) VALUES (?, ?, ?)", (story_id, user["id"], comment.body)
     )
+    if story["author_id"]:
+        notify(conn, story["author_id"], "comment", actor_id=user["id"], story_id=story_id)
     conn.commit()
     return comment_json(fetch_comment(conn, cur.lastrowid, user), user)
 

@@ -121,6 +121,7 @@ class ProfileIn(BaseModel):
     bio: str = Field(default="", max_length=300)
     instagram: str = Field(default="", max_length=31)
     profile_public: bool = False
+    email_follows: bool = False
 
     @field_validator("display_name", "bio")
     @classmethod
@@ -145,19 +146,21 @@ def profile_json(row) -> dict:
         "bio": row["bio"],
         "instagram": row["instagram"],
         "profile_public": bool(row["profile_public"]),
+        "member": bool(row["member"]) or row["role"] != "user",
     }
 
 
 @router.get("/api/me/profile")
 def my_profile(conn: Conn, user: CurrentUser):
-    return profile_json(conn.execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone())
+    row = conn.execute("SELECT * FROM users WHERE id = ?", (user["id"],)).fetchone()
+    return {**profile_json(row), "email_follows": bool(row["email_follows"])}
 
 
 @router.put("/api/me/profile")
 def save_profile(body: ProfileIn, conn: Conn, user: CurrentUser):
     conn.execute(
-        "UPDATE users SET display_name = ?, bio = ?, instagram = ?, profile_public = ? WHERE id = ?",
-        (body.display_name, body.bio, body.instagram, int(body.profile_public), user["id"]),
+        "UPDATE users SET display_name = ?, bio = ?, instagram = ?, profile_public = ?, email_follows = ? WHERE id = ?",
+        (body.display_name, body.bio, body.instagram, int(body.profile_public), int(body.email_follows), user["id"]),
     )
     conn.commit()
     return my_profile(conn, user)

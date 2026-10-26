@@ -132,6 +132,39 @@ CREATE TABLE IF NOT EXISTS reads (
 
 CREATE INDEX IF NOT EXISTS reads_story ON reads(story_id, last_at);
 
+-- Readers following writers, members recommending stories
+CREATE TABLE IF NOT EXISTS follows (
+    follower_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    followee_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at  TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (follower_id, followee_id),
+    CHECK (follower_id <> followee_id)
+);
+
+CREATE INDEX IF NOT EXISTS follows_followee ON follows(followee_id);
+
+CREATE TABLE IF NOT EXISTS recommends (
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    story_id   INTEGER NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    PRIMARY KEY (user_id, story_id)
+);
+
+CREATE INDEX IF NOT EXISTS recommends_story ON recommends(story_id);
+
+-- The bell in the nav. kind: follow, story, comment, recommend, invite_used, member, rejected
+CREATE TABLE IF NOT EXISTS notifications (
+    id         INTEGER PRIMARY KEY,
+    user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    kind       TEXT NOT NULL,
+    actor_id   INTEGER REFERENCES users(id) ON DELETE CASCADE,
+    story_id   INTEGER REFERENCES stories(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    read_at    TEXT
+);
+
+CREATE INDEX IF NOT EXISTS notifications_user ON notifications(user_id, id);
+
 -- Genres writers can pick on top of the dataset's categories. Mods add more.
 CREATE TABLE IF NOT EXISTS genres (
     name       TEXT PRIMARY KEY COLLATE NOCASE,
@@ -167,6 +200,7 @@ MIGRATIONS = {
         "member_via": "TEXT",  # founding, invite, approved, granted or grandfathered
         "invited_by": "INTEGER",
         "invite_code": "TEXT",  # the invite they signed up with, used up once their email is confirmed
+        "email_follows": "INTEGER NOT NULL DEFAULT 0",  # email me when someone I follow publishes
     },
     "stories": {
         "subtitle": "TEXT NOT NULL DEFAULT ''",

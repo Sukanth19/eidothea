@@ -17,7 +17,7 @@ FINISHED_SHARE_OF_TIME = 0.25
 TRENDING_DAYS = 14
 
 # Recent activity per story, each event fading with age (halved after 3 days, a third after 6…).
-# Finished reads count most; ratings above 5 lift a story and below 5 drag it; anonymous
+# Finished reads count most, then recommends; ratings above 5 lift a story and below 5 drag it; anonymous
 # visits count a little, so trending works before many people have accounts.
 HEAT_SQL = f"""
     SELECT story_id, SUM(w / (1 + age / 3.0)) AS heat FROM (
@@ -27,6 +27,9 @@ HEAT_SQL = f"""
         UNION ALL
         SELECT story_id, julianday('now') - julianday(created_at), (score - 5) / 2.5
         FROM story_ratings WHERE created_at > datetime('now', '-{TRENDING_DAYS} days')
+        UNION ALL
+        SELECT story_id, julianday('now') - julianday(created_at), 2.0
+        FROM recommends WHERE created_at > datetime('now', '-{TRENDING_DAYS} days')
         UNION ALL
         SELECT story_id, julianday('now') - julianday(created_at), 1.5
         FROM comments WHERE created_at > datetime('now', '-{TRENDING_DAYS} days')

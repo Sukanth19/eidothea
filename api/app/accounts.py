@@ -12,6 +12,7 @@ from fastapi import APIRouter, BackgroundTasks, Cookie, Depends, HTTPException, 
 from pydantic import BaseModel, Field, field_validator
 
 from . import guard, insights, mail
+from .notify import notify, unread
 from .deps import Conn, CurrentUser, ModUser, OptionalUser
 from .security import (
     FOUNDING_MEMBERS,
@@ -209,6 +210,7 @@ def grant_membership(conn, user_id: int, via: str, invited_by: int | None = None
            WHERE id = ? AND member = 0""",
         (via, invited_by, user_id),
     )
+    notify(conn, user_id, "member", actor_id=invited_by)
 
 
 def use_invite(conn, code: str, user_id: int) -> int | None:
@@ -231,6 +233,7 @@ def welcome_member(conn, user, tasks: BackgroundTasks) -> str | None:
         inviter = use_invite(conn, user["invite_code"], user["id"])
         if inviter:
             grant_membership(conn, user["id"], "invite", inviter)
+            notify(conn, inviter, "invite_used", actor_id=user["id"])
             return "invite"
     founders = conn.execute("SELECT COUNT(*) FROM users WHERE member_via = 'founding'").fetchone()[0]
     if founders < FOUNDING_MEMBERS:
@@ -288,8 +291,10 @@ def logout(response: Response, conn: Conn, eidothea_session: Annotated[str | Non
 
 
 @router.get("/api/auth/me")
-def me(user: OptionalUser):
-    return {"user": user_json(user, private=True) if user else None}
+def me(user: OptionalUser, conn: Conn):
+    if not user:
+        return {"user": None}
+    return {"user": {**user_json(user, private=True), "unread": unread(conn, user["id"])}}
 
 
 # --------------------------------------------------------------------------- confirming email
@@ -423,6 +428,7 @@ def redeem(body: CodeIn, user: ReaderUser, request: Request, conn: Conn):
     if not inviter:
         raise HTTPException(400, "That invite doesn't work. It may be used up, or mistyped.")
     grant_membership(conn, user["id"], "invite", inviter)
+    notify(conn, inviter, "invite_used", actor_id=user["id"])
     conn.commit()
     return {"user": user_json(fresh_user(conn, user["id"]), private=True)}
 
@@ -490,6 +496,8 @@ def decide(app_id: int, body: DecisionIn, conn: Conn, mod: ModUser, tasks: Backg
     )
     if body.approve:
         grant_membership(conn, row["user_id"], "approved")
+    else:
+        notify(conn, row["user_id"], "rejected")
     conn.commit()
     if row["email"] and row["email_verified_at"]:
         if body.approve:
