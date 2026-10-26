@@ -216,7 +216,8 @@ textarea { resize: vertical; line-height: 1.7; }
 a.chip:hover { color: var(--green); border-color: var(--green); text-decoration: none; }
 button.chip { cursor: pointer; }
 button.chip:hover { background: transparent; color: var(--green); box-shadow: none; }
-button.chip.on { color: var(--bg); background: var(--amber); border-color: var(--amber); }
+button.chip.on, a.chip.on { color: var(--bg); background: var(--amber); border-color: var(--amber); }
+a.chip.on:hover { color: var(--bg); }
 
 .rating { display: inline-flex; align-items: center; gap: .4rem; }
 .rating .bar { width: 46px; height: 5px; background: var(--line); position: relative; }
@@ -225,6 +226,8 @@ button.chip.on { color: var(--bg); background: var(--amber); border-color: var(-
 .badge { font-family: var(--term); font-size: 1rem; letter-spacing: .08em; padding: 0 .45rem; border: 1px solid currentColor; }
 .badge.user { color: var(--green); }
 .badge.import { color: var(--amber); }
+.badge.draft { color: var(--muted); }
+.card.draft { border-left-color: var(--muted); border-left-style: dashed; }
 
 /* ---------- Toolbar / pagination ---------- */
 .chips.quick { margin-top: 1.2rem; }
@@ -273,6 +276,41 @@ button.chip.on { color: var(--bg); background: var(--amber); border-color: var(-
 
 .owner-bar { display: flex; flex-wrap: wrap; gap: .7rem; align-items: center; padding: .8rem 1rem; border: 1px solid var(--line); background: var(--panel); margin-bottom: 2rem; }
 .owner-bar .label { font-family: var(--term); color: var(--muted); font-size: 1.15rem; margin-right: auto; }
+.owner-bar.draft { border-style: dashed; border-color: var(--amber); }
+.owner-bar.draft .label { color: var(--amber); }
+.doc-head .subtitle { font-size: 1.1rem; color: var(--muted); margin: .2rem 0 0; }
+
+/* ---------- Rating & comments ---------- */
+.rate-box { margin: 3rem auto 0; max-width: 520px; text-align: center; border: 1px solid var(--line); background: var(--panel); padding: 1rem 1.2rem; }
+.rate-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: .3rem 1rem; margin-bottom: .7rem; }
+.rate-head .term { font-size: 1.25rem; color: var(--amber); letter-spacing: .08em; }
+.rate-head .score { color: var(--amber); font-weight: 400; font-family: var(--term); font-size: 1.4rem; }
+.scale { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; }
+.scale button { justify-content: center; padding: .3rem 0; font-size: 1.2rem; border-color: var(--line); color: var(--muted); }
+.scale button.lit { background: var(--amber); border-color: var(--amber); color: var(--bg); box-shadow: 0 0 10px rgba(227, 172, 82, .25); }
+.scale button:hover { background: var(--amber); color: var(--bg); box-shadow: none; }
+.rate-box .hint { margin: .6rem 0 0; }
+
+.comments { margin-top: 3.5rem; border-top: 1px dashed var(--line); }
+.comment-form textarea { margin: 0; min-height: 5.5rem; }
+.comment-form-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .5rem; }
+.comment-form-foot .hint { margin: 0; }
+.comment-list { list-style: none; padding: 0; margin: 1.5rem 0 0; }
+.comment { border-left: 2px solid var(--line); padding: .2rem 0 .2rem 1rem; margin-bottom: 1.4rem; overflow: hidden; }
+.comment-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: .2rem .7rem; font-size: .85rem; }
+.comment-head b { color: var(--green); font-weight: 400; }
+.comment-head .role { font-size: 1rem; }
+.comment-body { margin: .3rem 0 .4rem; overflow-wrap: anywhere; }
+.comment-body p { margin: 0 0 .5em; }
+.comment-body blockquote { margin: 0 0 .5em; padding: .3rem .8rem; border-left: 2px solid var(--amber); background: var(--panel); }
+.comment-body h2, .comment-body h3 { font-size: 1.05rem; margin: 0 0 .4em; }
+.comment-actions { display: flex; align-items: center; gap: .5rem; }
+.vote { border-color: var(--line); color: var(--muted); font-size: 1.05rem; padding: 0 .55rem; }
+.vote:hover { background: transparent; color: var(--green); border-color: var(--green); box-shadow: none; }
+.vote.on { color: var(--bg); background: var(--green); border-color: var(--green); }
+.vote.down:hover { color: var(--red); border-color: var(--red); }
+.vote.down.on { color: var(--bg); background: var(--red); border-color: var(--red); }
+.vote:disabled:hover { color: var(--muted); border-color: var(--line); }
 
 /* ---------- Panels: auth, editor, admin ---------- */
 .terminal { max-width: 520px; margin: 1rem auto 0; background: var(--panel); border: 1px solid var(--line); padding: clamp(1.2rem, 4vw, 2.2rem); box-shadow: 0 0 60px rgba(0, 0, 0, .6); }

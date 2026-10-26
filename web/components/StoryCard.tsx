@@ -36,17 +36,26 @@ export function StoryGrid({ stories }: { stories: StorySummary[] }) {
 }
 
 function StoryCard({ story: s }: { story: StorySummary }) {
+  const draft = s.status === "draft";
+  const title = s.title || "Untitled draft";
   return (
-    <Link href={`/stories/${s.id}`} className={`card ${s.source}`}>
+    <Link href={draft ? `/stories/${s.id}/edit` : `/stories/${s.id}`} className={`card ${draft ? "draft" : s.source}`}>
       <div className="top">
         <span>#{String(s.id).padStart(4, "0")} · {s.reading_minutes} MIN</span>
-        {s.source === "user" ? <span className="badge user">NEW BLOOD</span> : <Rating value={s.rating} />}
+        {draft ? (
+          <span className="badge draft">DRAFT</span>
+        ) : s.rating != null ? (
+          <Rating value={s.rating} />
+        ) : (
+          s.source === "user" && <span className="badge user">NEW BLOOD</span>
+        )}
       </div>
-      <h3 className="glitch" data-text={s.title}>{s.title}</h3>
+      <h3 className="glitch" data-text={title}>{title}</h3>
       <div className="by">
-        {s.author ?? "Unknown author"} · {formatDate(s.published_at)}
+        {draft ? `LAST SAVED ${formatDate(s.updated_at ?? s.published_at)}` : <>{s.author ?? "Unknown author"} · {formatDate(s.published_at)}</>}
+        {s.comment_count > 0 && <> · {s.comment_count} {s.comment_count === 1 ? "comment" : "comments"}</>}
       </div>
-      <p>{excerpt(s.excerpt, 200)}</p>
+      <p>{s.subtitle || excerpt(s.excerpt, 200) || (draft ? "Nothing written yet." : "")}</p>
       <div className="chips">
         {s.categories.slice(0, 3).map(c => (
           <span key={c} className="chip">{c}</span>
