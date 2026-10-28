@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useSpring } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Markup } from "./Markup";
 
 const SIZE_KEY = "eidothea.reader-size";
@@ -14,7 +15,11 @@ export function Reader({ body, track, resume }: { body: string; track?: number; 
   const scaleX = useSpring(scrollYProgress, { stiffness: 120, damping: 30, restDelta: 0.001 });
   const [size, setSize] = useState(1);
   const [resumeAt, setResumeAt] = useState(resume);
+  const [dock, setDock] = useState<HTMLElement | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+
+  // On phones the controls also ride in the bottom bar, under the thumb (see Nav)
+  useEffect(() => setDock(document.getElementById("dock-slot")), []);
 
   // Blocks surface as they scroll into view. The hiding class is only added
   // here, so without JS (or with reduced motion) the text is simply there.
@@ -99,17 +104,22 @@ export function Reader({ body, track, resume }: { body: string; track?: number; 
     } catch {}
   }
 
+  const tools = (
+    <>
+      <span className="size-label">TEXT SIZE</span>
+      <button type="button" className="ghost" onClick={() => changeSize(-1)} disabled={size === 0} aria-label="Smaller text">A−</button>
+      <button type="button" className="ghost" onClick={() => changeSize(1)} disabled={size === SIZES.length - 1} aria-label="Larger text">A+</button>
+      {resumeAt !== undefined && (
+        <button type="button" className="resume" onClick={pickUp}>↓ PICK UP AT {Math.round(resumeAt * 100)}%</button>
+      )}
+    </>
+  );
+
   return (
     <>
       <motion.div className="progress" style={{ scaleX }} aria-hidden="true" />
-      <div className="reader-tools">
-        TEXT SIZE
-        <button type="button" className="ghost" onClick={() => changeSize(-1)} disabled={size === 0} aria-label="Smaller text">A−</button>
-        <button type="button" className="ghost" onClick={() => changeSize(1)} disabled={size === SIZES.length - 1} aria-label="Larger text">A+</button>
-        {resumeAt !== undefined && (
-          <button type="button" className="resume" onClick={pickUp}>↓ PICK UP AT {Math.round(resumeAt * 100)}%</button>
-        )}
-      </div>
+      <div className="reader-tools">{tools}</div>
+      {dock && createPortal(<div className="reader-dock">{tools}</div>, dock)}
       <div ref={bodyRef} className="story-body" style={{ "--reader-size": `${SIZES[size]}rem` } as React.CSSProperties}>
         <Markup text={body} />
       </div>

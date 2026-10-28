@@ -590,6 +590,7 @@ tr.you td:first-child { color: var(--amber); }
   .logo { font-size: 1.6rem; }
   .nav { display: none; }
   body { padding-bottom: calc(3.7rem + env(safe-area-inset-bottom)); }
+  body:has(.reader-dock) { padding-bottom: calc(7rem + env(safe-area-inset-bottom)); }
   body:has(.writer) { padding-bottom: 0; }
 
   .tabbar {
@@ -625,6 +626,12 @@ tr.you td:first-child { color: var(--amber); }
   .tabbar .tab.active, .tabbar .bell.active { color: var(--amber); }
   .tab-label { font-family: var(--caps); font-size: .72rem; letter-spacing: .06em; line-height: 1; white-space: nowrap; }
   .tabbar .bell-count { top: -.3rem; right: -.75rem; }
+
+  /* The reader's controls sit just above the tabs instead of at the top of the story */
+  .reader-tools { display: none; }
+  .reader-dock { display: flex; align-items: center; gap: .5rem; padding: .4rem max(16px, env(safe-area-inset-left)); border-bottom: 1px dashed var(--line); font-family: var(--caps); font-size: .85rem; color: var(--muted); }
+  .reader-dock button { min-width: 2.75rem; min-height: 2.5rem; justify-content: center; padding: 0 .6rem; font-size: .9rem; }
+  .reader-dock .resume { margin-left: auto; }
 
   /* Your pages, slid up from the bottom where the thumb already is */
   .you-sheet {
