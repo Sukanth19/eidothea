@@ -122,6 +122,7 @@ class ProfileIn(BaseModel):
     instagram: str = Field(default="", max_length=31)
     profile_public: bool = False
     email_follows: bool = False
+    show_reads: bool = True
 
     @field_validator("display_name", "bio")
     @classmethod
@@ -147,6 +148,7 @@ def profile_json(row) -> dict:
         "instagram": row["instagram"],
         "profile_public": bool(row["profile_public"]),
         "member": bool(row["member"]) or row["role"] != "user",
+        "show_reads": bool(row["show_reads"]),
     }
 
 
@@ -160,8 +162,10 @@ def my_profile(conn: Conn, user: CurrentUser):
 def save_profile(body: ProfileIn, conn: Conn, user: CurrentUser):
     check_active(user)  # a bio is somewhere to post too
     conn.execute(
-        "UPDATE users SET display_name = ?, bio = ?, instagram = ?, profile_public = ?, email_follows = ? WHERE id = ?",
-        (body.display_name, body.bio, body.instagram, int(body.profile_public), int(body.email_follows), user["id"]),
+        """UPDATE users SET display_name = ?, bio = ?, instagram = ?, profile_public = ?, email_follows = ?, show_reads = ?
+           WHERE id = ?""",
+        (body.display_name, body.bio, body.instagram, int(body.profile_public), int(body.email_follows),
+         int(body.show_reads), user["id"]),
     )
     conn.commit()
     return my_profile(conn, user)
@@ -177,6 +181,11 @@ def public_profile(username: str, conn: Conn, user: OptionalUser):
     out["story_count"] = conn.execute(
         "SELECT COUNT(*) FROM stories WHERE author_id = ? AND status = 'published'", (row["id"],)
     ).fetchone()[0]
+    # Stories they've finished, if they let it show; they always see their own
+    if row["show_reads"] or (user and user["id"] == row["id"]):
+        out["stories_read"] = conn.execute(
+            "SELECT COUNT(*) FROM reads WHERE user_id = ? AND finished", (row["id"],)
+        ).fetchone()[0]
     return out
 
 

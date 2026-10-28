@@ -266,6 +266,10 @@ export interface Profile {
   profile_public: boolean;
   member: boolean;
   story_count?: number;
+  /** Shows how many stories they've finished on their profile */
+  show_reads: boolean;
+  /** Present when they show it, or on their own profile */
+  stories_read?: number;
   /** Own profile only: email me when someone I follow publishes */
   email_follows?: boolean;
 }

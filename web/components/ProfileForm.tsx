@@ -49,6 +49,13 @@ export function ProfileForm({ initial }: { initial: Profile }) {
         </span>
       </label>
       <label className="check">
+        <input type="checkbox" checked={p.show_reads} onChange={e => setP({ ...p, show_reads: e.target.checked })} />
+        <span>
+          Show how many stories I&apos;ve read
+          <span className="hint">On your profile, as a count of the stories you&apos;ve finished. Never which ones.</span>
+        </span>
+      </label>
+      <label className="check">
         <input type="checkbox" checked={!!p.email_follows} onChange={e => setP({ ...p, email_follows: e.target.checked })} />
         <span>
           Email me when someone I follow publishes

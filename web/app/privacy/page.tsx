@@ -28,7 +28,7 @@ export default function PrivacyPage() {
       <h2>If you have an account</h2>
       <ul>
         <li>Your username, a scrambled (hashed) copy of your password, and when you joined and were last active.</li>
-        <li>What you read, once your email is confirmed: which stories you open, how far down you get, roughly how long you spend, and whether you finish. It decides what&apos;s trending and what&apos;s picked for you, and nothing else.</li>
+        <li>What you read, once your email is confirmed: which stories you open, how far down you get, roughly how long you spend, and whether you finish. It decides what&apos;s trending and what&apos;s picked for you. Your profile shows how many stories you&apos;ve finished (never which ones) unless you turn that off.</li>
         <li>Who you follow and which stories you recommend. Recommendations show on your profile; follower counts are public, but the list of who follows whom isn&apos;t shown.</li>
         <li>Your email address. It&apos;s used to confirm your account, reset your password and tell you about your membership, and it&apos;s never shown to anyone.</li>
         <li>How you became a member (founding spot, invite or waiting list) and, for invites, who invited you. A request to join the waiting list is kept with its note.</li>

@@ -44,6 +44,11 @@ export default async function PublicProfile({ params, searchParams }: Props) {
           {profile.role !== "user" && <span className={`role ${profile.role}`}>{ROLE_LABEL[profile.role].toUpperCase()}</span>}
           {social && <span>{social.followers} {social.followers === 1 ? "FOLLOWER" : "FOLLOWERS"} · {social.following} FOLLOWING</span>}
           <span>JOINED {formatDate(profile.created_at)}</span>
+          {profile.stories_read !== undefined && (
+            <span title={profile.show_reads ? undefined : "Only you can see this. Turn it on in your profile settings."}>
+              {profile.stories_read} {profile.stories_read === 1 ? "STORY" : "STORIES"} READ{!profile.show_reads && " · ONLY YOU SEE THIS"}
+            </span>
+          )}
           {profile.instagram && (
             <a href={`https://instagram.com/${profile.instagram}`} target="_blank" rel="noopener noreferrer">INSTAGRAM @{profile.instagram}</a>
           )}

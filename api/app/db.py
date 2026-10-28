@@ -242,6 +242,7 @@ MIGRATIONS = {
         "email_follows": "INTEGER NOT NULL DEFAULT 0",  # email me when someone I follow publishes
         "suspended_until": "TEXT",  # may read but not post, comment, rate, vote or report until then
         "suspended_reason": "TEXT NOT NULL DEFAULT ''",
+        "show_reads": "INTEGER NOT NULL DEFAULT 1",  # how many stories they've read shows on their profile
     },
     "stories": {
         "subtitle": "TEXT NOT NULL DEFAULT ''",
