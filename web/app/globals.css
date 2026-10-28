@@ -385,6 +385,14 @@ a.chip.on:hover { color: var(--bg); }
 .comment:target { border-left-color: var(--amber); background: linear-gradient(90deg, rgba(214, 165, 92, .08), transparent 60%); }
 .reply-form { margin: .8rem 0 0 1.6rem; }
 .mention { color: var(--amber); }
+/* The members offered after an "@"; above the box, so a phone keyboard doesn't cover it */
+.mention-field { position: relative; }
+.mention-list { position: absolute; left: 0; right: 0; bottom: calc(100% + 4px); z-index: 20; list-style: none; margin: 0; padding: .3rem 0; max-height: min(17rem, 45dvh); overflow-y: auto; overscroll-behavior: contain; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--amber); box-shadow: 0 -12px 40px rgba(0, 0, 0, .55); }
+.mention-list li { display: flex; align-items: center; gap: .6rem; min-height: 2.75rem; padding: .2rem .9rem; cursor: pointer; }
+.mention-list li.on { background: var(--panel-2); }
+.mention-list li.on b { color: var(--amber); }
+.mention-list b { font-weight: 400; color: var(--ghost); overflow: hidden; text-overflow: ellipsis; }
+.mention-list .here { margin-left: auto; font-family: var(--caps); font-size: .78rem; letter-spacing: .06em; color: var(--muted); white-space: nowrap; }
 
 /* ---------- Prompts ---------- */
 .prompt-list { display: grid; gap: 1rem; }

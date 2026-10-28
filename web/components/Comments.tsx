@@ -8,6 +8,7 @@ import { ROLE_LABEL, ROLE_LEVEL, type Comment, type User } from "@/lib/types";
 import { Icon } from "./Icon";
 import { Markup } from "./Markup";
 import { MembersOnly } from "./MembersOnly";
+import { MentionTextarea } from "./MentionTextarea";
 import { ReportButton } from "./Reports";
 import { Sigil } from "./Sigil";
 
@@ -140,7 +141,7 @@ export function Comments({ storyId, initial, user }: { storyId: number; initial:
 
       {user?.member ? (
         <form className="comment-form" onSubmit={post}>
-          <textarea value={body} onChange={e => setBody(e.target.value)} maxLength={5000} rows={3} placeholder="What did you make of it?" aria-label="Your comment" required />
+          <MentionTextarea storyId={storyId} value={body} onChange={setBody} maxLength={5000} rows={3} placeholder="What did you make of it?" aria-label="Your comment" required />
           <div className="comment-form-foot">
             <span className="hint">*italic* · **bold** · __underline__ · &gt; quote · @name</span>
             <button type="submit" disabled={posting || !body.trim()}>{posting ? "SENDING…" : "POST"}</button>
@@ -167,7 +168,7 @@ export function Comments({ storyId, initial, user }: { storyId: number; initial:
                 </ul>
                 {replyTo?.root === c.id && (
                   <form className="comment-form reply-form" onSubmit={postReply}>
-                    <textarea value={reply} onChange={e => setReply(e.target.value)} maxLength={5000} rows={2} autoFocus
+                    <MentionTextarea storyId={storyId} value={reply} onChange={setReply} maxLength={5000} rows={2} autoFocus
                       placeholder={`Reply to ${replyTo.to.author}…`} aria-label={`Reply to ${replyTo.to.author}`} required />
                     <div className="comment-form-foot">
                       <button type="button" className="ghost" onClick={() => setReplyTo(null)}>CANCEL</button>
