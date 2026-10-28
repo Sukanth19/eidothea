@@ -324,6 +324,12 @@ def init() -> None:
             conn.execute("UPDATE stories SET announced_at = published_at WHERE status = 'published'")
         conn.execute("CREATE UNIQUE INDEX IF NOT EXISTS users_email ON users(email COLLATE NOCASE) WHERE email IS NOT NULL")
         conn.execute("CREATE INDEX IF NOT EXISTS stories_status ON stories(status)")
+        # Everything lists filter and sort on, in one index. The columns sit after the story text in the
+        # table, so reading them there means wading through every story; from here lists never touch it.
+        conn.execute(
+            """CREATE INDEX IF NOT EXISTS stories_list ON stories(status, published_at, source, author_id, author_name,
+               rating, reading_minutes, prompt_id, categories, tags)"""
+        )
         fresh = not conn.execute("SELECT 1 FROM sqlite_master WHERE name = 'stories_fts'").fetchone()
         conn.executescript(FTS)
         if fresh:  # index the stories that were there before search existed

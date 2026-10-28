@@ -3,6 +3,7 @@
 import json
 import re
 import sqlite3
+import time
 from contextlib import asynccontextmanager
 from typing import Annotated, Literal
 
@@ -165,15 +166,21 @@ STORY_FROM = """stories s
     LEFT JOIN (SELECT story_id, COUNT(*) AS n, SUM(score) AS total FROM story_ratings GROUP BY story_id) r
            ON r.story_id = s.id"""
 
+# The blended score: the archive's own rating counts as ARCHIVE_WEIGHT votes alongside members'
+SCORE_SQL = f"""CASE WHEN s.rating IS NULL THEN r.total * 1.0 / r.n
+         ELSE (s.rating * {ARCHIVE_WEIGHT} + COALESCE(r.total, 0)) / ({ARCHIVE_WEIGHT} + COALESCE(r.n, 0))
+    END"""
+
+# What a list needs to put stories in order, without their text or per-story counts
+ORDER_COLUMNS = f"s.id, COALESCE(r.n, 0) AS rating_count, {SCORE_SQL} AS score"
+
 STORY_COLUMNS = f"""
     s.id, s.title, s.subtitle, s.author_id, s.author_name, u.username AS author_username,
     COALESCE(u.profile_public, 0) AS author_public, COALESCE(u.role, 'user') AS author_role,
     s.tags, s.categories, s.warnings, s.rating AS archive_rating, s.reading_minutes, s.source, s.truncated,
     s.status, s.published_at, s.updated_at, s.prompt_id, p.title AS prompt_title,
     COALESCE(r.n, 0) AS rating_count,
-    CASE WHEN s.rating IS NULL THEN r.total * 1.0 / r.n
-         ELSE (s.rating * {ARCHIVE_WEIGHT} + COALESCE(r.total, 0)) / ({ARCHIVE_WEIGHT} + COALESCE(r.n, 0))
-    END AS score,
+    {SCORE_SQL} AS score,
     (SELECT COUNT(*) FROM comments c WHERE c.story_id = s.id) AS comment_count,
     (SELECT COUNT(*) FROM recommends rc WHERE rc.story_id = s.id) AS recommend_count
 """
@@ -233,6 +240,19 @@ def check_publishable(title: str, body: str) -> None:
         raise HTTPException(422, "Give your story a title before publishing.")
     if len(body) < MIN_BODY:
         raise HTTPException(422, f"Stories need at least {MIN_BODY} characters to be published.")
+
+
+def load_stories(conn, user, ids: list[int]) -> list[dict]:
+    """Cards for these stories, in this order. Lists first pick their page by id alone, so only
+    the stories shown have their text read and their comments and recommends counted."""
+    if not ids:
+        return []
+    rows = conn.execute(
+        f"SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt FROM {STORY_FROM} WHERE s.id IN ({','.join('?' * len(ids))})",
+        ids,
+    ).fetchall()
+    by_id = {r["id"]: r for r in rows}
+    return [story_json(by_id[i], user) for i in ids if i in by_id]
 
 
 def with_reads(conn, user, items: list[dict]) -> list[dict]:
@@ -351,11 +371,11 @@ def list_stories(
     base = f"FROM {STORY_FROM}{joins}{trending} {where_sql}"
     args = [*join_args, *args]
     total = conn.execute(f"{with_sql}SELECT COUNT(*) {base}", args).fetchone()[0]
-    rows = conn.execute(
-        f"{with_sql}SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt {base} ORDER BY {order_sql} LIMIT ? OFFSET ?",
+    ids = [r[0] for r in conn.execute(
+        f"{with_sql}SELECT {ORDER_COLUMNS} {base} ORDER BY {order_sql} LIMIT ? OFFSET ?",
         [*args, per_page, (page - 1) * per_page],
-    ).fetchall()
-    items = with_reads(conn, user, [story_json(r, user) for r in rows])
+    )]
+    items = with_reads(conn, user, load_stories(conn, user, ids))
     if match and items:
         # Show the part of the story that matched instead of its opening lines
         hits = dict(conn.execute(
@@ -380,9 +400,9 @@ def for_you(conn: Conn, user: ReaderUser, limit: int = Query(6, ge=1, le=24)):
     cats = conn.execute(reading.affinity_sql(), {"uid": user["id"]}).fetchall()
     if not cats:
         return {"items": [], "based_on": []}
-    rows = conn.execute(
+    ids = [r[0] for r in conn.execute(
         f"""WITH cats AS ({reading.affinity_sql()})
-            SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt,
+            SELECT {ORDER_COLUMNS},
                    (SELECT SUM(c.w) FROM json_each(s.categories) j JOIN cats c ON c.cat = j.value) AS fit
             FROM {STORY_FROM} LEFT JOIN ({reading.HEAT_SQL}) t ON t.story_id = s.id
             WHERE s.status = 'published' AND s.author_id IS NOT :uid
@@ -392,8 +412,8 @@ def for_you(conn: Conn, user: ReaderUser, limit: int = Query(6, ge=1, le=24)):
             ORDER BY fit * COALESCE(score, 6) / 10 + COALESCE(t.heat, 0) * 0.2 DESC, s.id DESC
             LIMIT :limit""",
         {"uid": user["id"], "limit": limit},
-    ).fetchall()
-    return {"items": [story_json(r, user) for r in rows], "based_on": [c["cat"] for c in cats[:3]]}
+    )]
+    return {"items": load_stories(conn, user, ids), "based_on": [c["cat"] for c in cats[:3]]}
 
 
 @app.get("/api/stories/continue")
@@ -433,16 +453,17 @@ def related(story_id: int, conn: Conn, user: OptionalUser, limit: int = Query(4,
     """What to read next: stories that share this one's genres, tags or writer, and above all
     the ones people who finished this also finished. Skips what the reader has already finished."""
     fetch_published(conn, story_id, user)
-    rows = conn.execute(
+    ids = [r[0] for r in conn.execute(
         f"""WITH me AS (SELECT categories, tags, author_id FROM stories WHERE id = :id),
+                 -- This story's genres and tags as small lookup tables, so each candidate is checked against them once
+                 mc AS MATERIALIZED (SELECT DISTINCT value AS v FROM me, json_each(me.categories)),
+                 mt AS MATERIALIZED (SELECT DISTINCT lower(value) AS v FROM me, json_each(me.tags)),
                  also AS (SELECT r2.story_id, COUNT(*) AS n FROM reads r1
                           JOIN reads r2 ON r2.user_id = r1.user_id AND r2.story_id <> r1.story_id AND r2.finished
                           WHERE r1.story_id = :id AND r1.finished GROUP BY r2.story_id)
-            SELECT {STORY_COLUMNS}, substr(s.body, 1, 320) AS excerpt,
-                   2 * (SELECT COUNT(*) FROM json_each(s.categories) a, json_each((SELECT categories FROM me)) b
-                        WHERE a.value = b.value)
-                   + (SELECT COUNT(*) FROM json_each(s.tags) a, json_each((SELECT tags FROM me)) b
-                      WHERE lower(a.value) = lower(b.value))
+            SELECT {ORDER_COLUMNS},
+                   2 * (SELECT COUNT(*) FROM json_each(s.categories) WHERE value IN mc)
+                   + (SELECT COUNT(*) FROM json_each(s.tags) WHERE lower(value) IN mt)
                    + (s.author_id IS NOT NULL AND s.author_id = (SELECT author_id FROM me))
                    + 3 * COALESCE(also.n, 0) AS fit
             FROM {STORY_FROM} LEFT JOIN also ON also.story_id = s.id
@@ -451,8 +472,8 @@ def related(story_id: int, conn: Conn, user: OptionalUser, limit: int = Query(4,
             ORDER BY fit DESC, score IS NULL, score DESC, s.id DESC
             LIMIT :limit""",
         {"id": story_id, "uid": user["id"] if user else None, "limit": limit},
-    ).fetchall()
-    return {"items": with_reads(conn, user, [story_json(r, user) for r in rows])}
+    )]
+    return {"items": with_reads(conn, user, load_stories(conn, user, ids))}
 
 
 @app.post("/api/stories", status_code=201)
@@ -473,6 +494,7 @@ def create_story(story: StoryIn, conn: Conn, user: MemberUser, tasks: Background
     if story.status == "published":
         social.announce_story(conn, cur.lastrowid, user["id"], tasks)
     conn.commit()
+    forget_genre_counts()
     return story_json(fetch_story(conn, cur.lastrowid, user), user, body=True)
 
 
@@ -520,6 +542,7 @@ def update_story(story_id: int, patch: StoryPatch, conn: Conn, user: MemberUser,
     if debut and existing["author_id"]:
         social.announce_story(conn, story_id, existing["author_id"], tasks)
     conn.commit()
+    forget_genre_counts()
     return story_json(fetch_story(conn, story_id, user), user, body=True)
 
 
@@ -529,6 +552,7 @@ def delete_story(story_id: int, conn: Conn, user: CurrentUser):
         raise HTTPException(403, "You can only delete your own stories.")
     conn.execute("DELETE FROM stories WHERE id = ?", (story_id,))
     conn.commit()
+    forget_genre_counts()
     return Response(status_code=204)
 
 
@@ -677,26 +701,39 @@ def vote_comment(comment_id: int, vote: VoteIn, conn: Conn, user: MemberUser):
 
 # --------------------------------------------------------------------------- browse helpers
 
+# Published stories per genre. Every archive page wants these, and counting means reading every
+# story's genre list, so it's kept for a minute and dropped whenever a story is written or removed.
+GENRE_COUNTS_FOR = 60
+_genre_counts: tuple[float, dict[str, int]] | None = None
+
+
+def genre_counts(conn) -> dict[str, int]:
+    global _genre_counts
+    if _genre_counts is None or time.monotonic() - _genre_counts[0] > GENRE_COUNTS_FOR:
+        rows = conn.execute(
+            """SELECT j.value, COUNT(*) FROM stories s, json_each(s.categories) j
+               WHERE s.status = 'published' GROUP BY j.value"""
+        ).fetchall()
+        _genre_counts = (time.monotonic(), {name: n for name, n in rows})
+    return _genre_counts[1]
+
+
+def forget_genre_counts() -> None:
+    global _genre_counts
+    _genre_counts = None
+
+
 @app.get("/api/categories")
 def categories(conn: Conn):
-    rows = conn.execute(
-        """SELECT j.value AS name, COUNT(*) AS count
-           FROM stories s, json_each(s.categories) j
-           WHERE s.status = 'published'
-           GROUP BY j.value ORDER BY count DESC, name"""
-    ).fetchall()
-    return [dict(r) for r in rows]
+    counts = genre_counts(conn)
+    return [{"name": name, "count": n} for name, n in sorted(counts.items(), key=lambda c: (-c[1], c[0]))]
 
 
 @app.get("/api/genres")
 def list_genres(conn: Conn):
-    rows = conn.execute(
-        """SELECT g.name, g.blurb,
-                  (SELECT COUNT(*) FROM stories s, json_each(s.categories) j
-                   WHERE s.status = 'published' AND j.value = g.name) AS count
-           FROM genres g ORDER BY g.created_at, g.name"""
-    ).fetchall()
-    return [dict(r) for r in rows]
+    counts = genre_counts(conn)
+    rows = conn.execute("SELECT name, blurb FROM genres ORDER BY created_at, name").fetchall()
+    return [{**dict(r), "count": counts.get(r["name"], 0)} for r in rows]
 
 
 @app.post("/api/genres", status_code=201)
