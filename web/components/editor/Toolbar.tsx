@@ -23,7 +23,7 @@ function Tool({ icon, label, on, disabled, onClick }: { icon: IconName; label: s
   );
 }
 
-export function Toolbar({ editor, autocaps, onAutocaps }: { editor: Editor; autocaps: boolean; onAutocaps: () => void }) {
+export function Toolbar({ editor, autocaps, onAutocaps, onCommands }: { editor: Editor; autocaps: boolean; onAutocaps: () => void; onCommands: () => void }) {
   const s = useEditorState({
     editor,
     selector: ({ editor: e }) => ({
@@ -70,6 +70,11 @@ export function Toolbar({ editor, autocaps, onAutocaps }: { editor: Editor; auto
       <Tool icon="dash" label="Em dash (or type --)" onClick={run(c => c.insertContent("—"))} />
       <Tool icon="scene" label="Scene break" onClick={run(c => c.setHorizontalRule())} />
       <Tool icon="clear" label="Clear formatting" onClick={run(c => c.unsetAllMarks().clearNodes())} />
+      <span className="sep" />
+      {/* Phone keyboards bury the ` key, so the palette has a button too */}
+      <button type="button" className="tool caps" title="Story commands (type `)" onMouseDown={e => e.preventDefault()} onClick={onCommands}>
+        {"{ }"} <span className="tool-label">COMMANDS</span>
+      </button>
       <span className="sep" />
       <button
         type="button"

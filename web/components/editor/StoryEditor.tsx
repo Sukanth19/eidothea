@@ -13,7 +13,9 @@ import { readingMinutes } from "@/lib/format";
 import { WARNING_LABEL, type ContentWarning, type Prompt, type Story, type User } from "@/lib/types";
 import { DeleteStoryButton } from "../DeleteStoryButton";
 import { Icon } from "../Icon";
+import { ReaderContext } from "../LiveText";
 import { Markup } from "../Markup";
+import { CommandPalette, StoryCommands } from "./Commands";
 import { fromDoc, toDoc, Typing } from "./extensions";
 import { Toolbar } from "./Toolbar";
 
@@ -65,6 +67,7 @@ export function StoryEditor({ story, genres = [], categories, user, prompts = []
   const [preview, setPreview] = useState<string | null>(null);
   const [autocaps, setAutocaps] = useState(true);
   const [stats, setStats] = useState({ words: 0, chars: 0 });
+  const [palette, setPalette] = useState<{ from: number; to: number } | null>(null);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
@@ -99,6 +102,7 @@ export function StoryEditor({ story, genres = [], categories, user, prompts = []
       }),
       Placeholder.configure({ placeholder: "Start writing…" }),
       Typing.configure({ autocaps: () => autocapsRef.current }),
+      StoryCommands.configure({ open: (from, to) => setPalette({ from, to }) }),
     ],
     content: toDoc(story?.body ?? ""),
     editorProps: {
@@ -296,7 +300,9 @@ export function StoryEditor({ story, genres = [], categories, user, prompts = []
             <button type="button" className="primary" onClick={update} disabled={save === "saving"}>UPDATE</button>
           )}
         </div>
-        {editor && preview === null && <Toolbar editor={editor} autocaps={autocaps} onAutocaps={toggleAutocaps} />}
+        {editor && preview === null && (
+          <Toolbar editor={editor} autocaps={autocaps} onAutocaps={toggleAutocaps} onCommands={() => setPalette({ from: editor.state.selection.from, to: editor.state.selection.to })} />
+        )}
       </div>
 
       <AnimatePresence>
@@ -315,7 +321,11 @@ export function StoryEditor({ story, genres = [], categories, user, prompts = []
               {subtitle && <p className="subtitle">{subtitle}</p>}
               <div className="meta"><span>BY <b>{author}</b></span><span>{readingMinutes(preview)} MIN READ</span></div>
             </header>
-            <div className="story-body"><Markup text={preview} /></div>
+            <div className="story-body">
+              <ReaderContext.Provider value={{ name: user.username, reread: false }}>
+                <Markup text={preview} live />
+              </ReaderContext.Provider>
+            </div>
           </article>
         ) : (
           <>
@@ -368,10 +378,15 @@ export function StoryEditor({ story, genres = [], categories, user, prompts = []
           <>
             <div className="writer-bottom">
               <span>{stats.words.toLocaleString("en-US")} WORDS · ~{Math.max(1, Math.round(stats.words / 200))} MIN READ</span>
-              <button type="button" className="ghost" onClick={() => setPanel("settings")}>
-                <Icon name="sliders" size={16} /> SETTINGS
-              </button>
+              <span className="writer-bottom-actions">
+                <a href="/guide" target="_blank" rel="noopener" className="btn ghost">GUIDE</a>
+                <button type="button" className="ghost" onClick={() => setPanel("settings")}>
+                  <Icon name="sliders" size={16} /> SETTINGS
+                </button>
+              </span>
             </div>
+
+            {editor && palette && preview === null && <CommandPalette editor={editor} range={palette} onClose={() => setPalette(null)} />}
 
             <AnimatePresence>
               {panel && (

@@ -84,7 +84,7 @@ export function Nav({ user }: { user: User | null }) {
   if (user) {
     if (user.member) {
       links.push({ href: "/stories/new", label: "WRITE" });
-      yours.push({ href: "/me", label: "MY STORIES" }, { href: "/me/stats", label: "STATS" });
+      yours.push({ href: "/me", label: "MY STORIES" }, { href: "/me/stats", label: "STATS" }, { href: "/guide", label: "WRITER'S GUIDE" });
     } else {
       links.push({ href: "/membership", label: "BECOME A MEMBER" });
     }
