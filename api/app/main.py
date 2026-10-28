@@ -640,7 +640,8 @@ def add_comment(story_id: int, comment: CommentIn, conn: Conn, user: MemberUser)
     names = list(dict.fromkeys(n.lower() for n in MENTION.findall(comment.body)))[:MAX_MENTIONS]
     if names:
         mentioned = conn.execute(
-            f"SELECT id FROM users WHERE username IN ({','.join('?' * len(names))})", names
+            # Mentions are between members; a name that isn't one stays plain text
+            f"SELECT id FROM users WHERE member = 1 AND username IN ({','.join('?' * len(names))})", names
         ).fetchall()
         for m in mentioned:
             if m["id"] not in told:

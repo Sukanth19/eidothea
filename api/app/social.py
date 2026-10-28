@@ -95,6 +95,26 @@ def announce_story(conn, story_id: int, author_id: int, tasks: BackgroundTasks) 
             )
 
 
+# --------------------------------------------------------------------------- mentions
+
+@router.get("/api/mentions")
+def mention_candidates(conn: Conn, user: MemberUser, q: str = "", story_id: int | None = None):
+    """Members to offer after an "@" in a comment: the story's writer and the people already
+    talking under it first, then everyone else whose name starts with what's been typed."""
+    prefix = q.strip().lstrip("@")[:24].replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    rows = conn.execute(
+        r"""SELECT u.username, u.role,
+                   EXISTS (SELECT 1 FROM stories s WHERE s.id = :story AND s.author_id = u.id)
+                   OR EXISTS (SELECT 1 FROM comments c WHERE c.story_id = :story AND c.user_id = u.id) AS here
+            FROM users u
+            WHERE u.member = 1 AND u.id != :me AND u.username LIKE :prefix || '%' ESCAPE '\'
+            ORDER BY here DESC, u.username COLLATE NOCASE
+            LIMIT 8""",
+        {"story": story_id, "me": user["id"], "prefix": prefix},
+    ).fetchall()
+    return [{"username": r["username"], "role": r["role"], "here": bool(r["here"])} for r in rows]
+
+
 # --------------------------------------------------------------------------- recommends
 
 def recommend_state(conn, story_id: int, user) -> dict:
