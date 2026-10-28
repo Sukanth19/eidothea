@@ -687,12 +687,14 @@ tr.you td:first-child { color: var(--amber); }
   .chip { padding: .3rem .65rem; font-size: .9rem; }
   a.chip, button.chip { display: inline-flex; align-items: center; min-height: 2.2rem; }
   .chips { gap: .45rem; }
-  .reader-tools button { min-width: 2.6rem; min-height: 2.4rem; justify-content: center; }
-  .vote { min-height: 2.4rem; padding-inline: .8rem; }
+  /* 44px is about the smallest thing a thumb hits without aiming */
+  .btn, button:not(.link-btn, .tool, .chip, .chart-col) { min-height: 2.75rem; }
+  .reader-tools button { min-width: 2.75rem; justify-content: center; }
+  .vote { padding-inline: .8rem; }
   .comment-actions .link-btn { padding: .5rem; }
   .tool { padding: .55rem; }
   .writer-tools select { padding-block: .45rem; }
-  .pager a, .pager span { padding: .35rem .85rem; }
+  .pager a, .pager span { display: inline-flex; align-items: center; min-height: 2.75rem; padding: 0 .95rem; }
   .scale button { padding: .55rem 0; }
   /* Hover-only flourishes stick after a tap on touch screens */
   .card:hover::after { animation: none; }
