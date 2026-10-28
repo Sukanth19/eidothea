@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/client-api";
 import { formatDate } from "@/lib/format";
 import type { Notification } from "@/lib/types";
+import { Icon } from "./Icon";
 import { Sigil } from "./Sigil";
 
 function Text({ n }: { n: Notification }) {
@@ -48,8 +49,8 @@ export function NotificationList({ items }: { items: Notification[] }) {
   );
 }
 
-/** Nav link with an unread count, refreshed every minute and on every page change. */
-export function Bell({ initial }: { initial: number }) {
+/** Unread count, refreshed every minute and on every page change. */
+export function useUnread(initial: number) {
   const pathname = usePathname();
   const [count, setCount] = useState(initial);
 
@@ -70,13 +71,19 @@ export function Bell({ initial }: { initial: number }) {
     };
   }, [pathname]);
 
+  return count;
+}
+
+/** Nav link with the unread count; `label` adds a caption under it in the phone tab bar. */
+export function Bell({ count, label }: { count: number; label?: string }) {
+  const pathname = usePathname();
   return (
     <Link href="/notifications" className={`bell${pathname === "/notifications" ? " active" : ""}`} aria-label={count ? `${count} unread notifications` : "Notifications"}>
-      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-        <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-      </svg>
-      {count > 0 && <span className="bell-count">{count > 99 ? "99+" : count}</span>}
+      <span className="bell-icon">
+        <Icon name="bell" size={label ? 22 : 17} />
+        {count > 0 && <span className="bell-count">{count > 99 ? "99+" : count}</span>}
+      </span>
+      {label && <span className="tab-label" aria-hidden="true">{label}</span>}
     </Link>
   );
 }

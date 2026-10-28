@@ -88,7 +88,7 @@ p { margin: 0 0 1em; }
 .nav .underline { position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; background: var(--amber); box-shadow: 0 0 8px var(--amber); }
 .nav .whoami { color: var(--muted); font-size: .86rem; }
 .nav .whoami b { color: var(--amber); font-weight: 400; }
-.menu-btn { display: none; }
+.tabbar { display: none; }
 
 /* Your name opens a menu with your pages, your role's pages and log out */
 .account { position: relative; }
@@ -580,31 +580,75 @@ tr.you td:first-child { color: var(--amber); }
 
 @media (max-width: 600px) {
   body { font-size: 16px; }
-  .nav { margin-left: 0; }
 }
 
 /* ---------- Phones & tablets ---------- */
 @media (max-width: 720px) {
-  /* One slim row: logo + menu button. The links fold out below it. */
-  .site-header { padding-block: max(.6rem, env(safe-area-inset-top)) .5rem; background: var(--bg); }
+  /* Up top only the name, scrolling away with the page; the way around lives at the bottom */
+  .site-header { position: static; z-index: auto; padding-block: max(.6rem, env(safe-area-inset-top)) .3rem; background: var(--bg); }
   .site-header .wrap { padding-bottom: .5rem; }
   .logo { font-size: 1.6rem; }
-  .menu-btn { display: inline-flex; margin-left: auto; font-family: var(--caps); font-size: 1.05rem; color: var(--blood); padding: .35rem 0 .35rem .6rem; }
-  .nav { display: none; flex-basis: 100%; flex-direction: column; align-items: stretch; gap: 0; margin: 0; font-size: 1.5rem; }
-  .nav.open { display: flex; }
-  .nav a, .nav .whoami, .nav .link-btn { padding: .55rem 0; border-top: 1px dashed var(--line); text-align: left; }
-  .nav .underline { display: none; }
-  /* In the fold-out list there's room for everything: the account menu just lies open */
-  .account-toggle { pointer-events: none; padding: .55rem 0; border-top: 1px dashed var(--line); }
-  .caret-down { display: none; }
-  .nav .account-toggle .whoami { padding: 0; border-top: 0; }
-  .account-toggle { width: 100%; }
-  .nav .bell { padding: .55rem 0; border-top: 1px dashed var(--line); }
-  .nav .bell-count { position: static; margin-left: .5rem; }
-  .account-menu { display: flex; position: static; min-width: 0; background: transparent; border: 0; box-shadow: none; }
-  .account-group { padding: 0; }
-  .account-group + .account-group { border-top: 0; }
-  .account-menu a, .account-menu .link-btn { padding: .55rem 0; border-top: 1px dashed var(--line); font-size: 1.5rem; }
+  .nav { display: none; }
+  body { padding-bottom: calc(3.7rem + env(safe-area-inset-bottom)); }
+  body:has(.writer) { padding-bottom: 0; }
+
+  .tabbar {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 70;
+    background: var(--bg);
+    border-top: 1px solid var(--line);
+    padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+    transition: transform .25s ease;
+  }
+  .tabbar.tucked { transform: translateY(100%); }
+  /* It would sit on top of the keyboard while typing a comment or a search */
+  body:has(input:focus, textarea:focus, select:focus) .tabbar { display: none; }
+  .tabs { display: flex; }
+  .tabbar .tab, .tabbar .bell {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: .2rem;
+    min-height: 3.7rem;
+    padding: .45rem 0 .35rem;
+    border: 0;
+    color: var(--muted);
+  }
+  .tabbar .tab:hover, .tabbar .bell:hover { text-decoration: none; background: transparent; color: var(--muted); box-shadow: none; }
+  .tabbar .tab.active, .tabbar .bell.active { color: var(--amber); }
+  .tab-label { font-family: var(--caps); font-size: .72rem; letter-spacing: .06em; line-height: 1; white-space: nowrap; }
+  .tabbar .bell-count { top: -.3rem; right: -.75rem; }
+
+  /* Your pages, slid up from the bottom where the thumb already is */
+  .you-sheet {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 90;
+    max-height: 85dvh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    background: var(--panel);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -20px 60px rgba(0, 0, 0, .6);
+    padding: .5rem max(16px, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+    font-family: var(--caps);
+  }
+  .sheet-grip { width: 42px; height: 4px; border-radius: 2px; background: var(--line); margin: .3rem auto 1rem; }
+  .you-sheet .whoami { margin: 0 0 .5rem; color: var(--muted); font-size: .95rem; }
+  .you-sheet .whoami b { color: var(--amber); font-weight: 400; }
+  .you-sheet .account-group { padding: 0; border-top: 1px dashed var(--line); }
+  .you-sheet a, .you-sheet .link-btn { display: block; width: 100%; padding: .75rem 0; font-size: 1.3rem; text-align: left; color: var(--text); }
+  .you-sheet a:hover, .you-sheet .link-btn:hover { text-decoration: none; color: var(--blood); }
+  .you-sheet a.active { color: var(--amber); }
 
   .hero .actions .btn { flex: 1 1 100%; justify-content: center; }
   .doc-head .meta { gap: .2rem 1rem; }
@@ -618,6 +662,8 @@ tr.you td:first-child { color: var(--amber); }
   .pill { font-size: .76rem; padding: 0 .4rem; }
   .writer-top button.primary { padding-inline: .5rem; font-size: .9rem; }
   .writer-bottom > span { font-size: .8rem; }
+  /* Five tab captions have to share 320px */
+  .tab-label { font-size: .62rem; letter-spacing: .02em; }
 }
 
 /* Touch screens keep :hover after a tap, which left buttons stuck "filled" */
@@ -664,7 +710,8 @@ tr.you td:first-child { color: var(--amber); }
 .follow-btn { font-size: .9rem; padding: .1rem .9rem; }
 .comment-head .sigil { align-self: center; }
 
-.bell { position: relative; display: inline-flex; align-items: center; color: var(--text); padding: 0 .2rem; }
+.bell { display: inline-flex; align-items: center; color: var(--text); padding: 0 .2rem; }
+.bell-icon { position: relative; display: inline-flex; }
 .bell:hover, .bell.active { color: var(--blood); text-decoration: none; }
 .bell-count { position: absolute; top: -.45rem; right: -.6rem; min-width: 1.15rem; padding: 0 .25rem; border-radius: 999px; background: var(--red); color: #fff; font-family: var(--body); font-size: .7rem; line-height: 1.15rem; text-align: center; box-shadow: 0 0 8px rgba(224, 57, 43, .6); }
 
