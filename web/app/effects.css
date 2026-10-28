@@ -3,11 +3,16 @@
 
 .fx-layer { position: fixed; inset: 0; pointer-events: none; z-index: 100; }
 
-/* Film grain */
-.static {
-  opacity: .045;
+/* Film grain. The noise is drawn once on an oversized layer and the layer jumps around: moving it
+   is the graphics chip's job, while moving the background inside it repainted the screen every step. */
+.static { opacity: .045; overflow: hidden; }
+.static::before {
+  content: "";
+  position: absolute;
+  inset: -120px;
   background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>");
   background-size: 220px 220px;
+  will-change: transform;
   animation: static-shift .9s steps(6) infinite;
 }
 
@@ -44,12 +49,12 @@ html.dim .dark { animation: lights-dim .9s ease-out; }
 body:has(.writer) .dark { display: none; }
 
 @keyframes static-shift {
-  0%   { background-position: 0 0; }
-  20%  { background-position: -60px 40px; }
-  40%  { background-position: 80px -30px; }
-  60%  { background-position: -20px -90px; }
-  80%  { background-position: 110px 70px; }
-  100% { background-position: 0 0; }
+  0%   { transform: translate(0, 0); }
+  20%  { transform: translate(-60px, 40px); }
+  40%  { transform: translate(80px, -30px); }
+  60%  { transform: translate(-20px, -90px); }
+  80%  { transform: translate(110px, 70px); }
+  100% { transform: translate(0, 0); }
 }
 
 @keyframes fog-drift { to { transform: translateX(25%); } }
@@ -120,7 +125,7 @@ html[data-fx="off"] .haunt::before,
 html[data-fx="off"] .haunt::after { display: none; }
 
 @media (prefers-reduced-motion: reduce) {
-  .static, .lantern, .fog::before, .fog::after, .flicker, .caret, .card:hover::after, .page-in, .rise { animation: none; }
+  .static::before, .lantern, .fog::before, .fog::after, .flicker, .caret, .card:hover::after, .page-in, .rise { animation: none; }
   .story-body.armed > * { opacity: 1; transform: none; transition: none; }
   .haunt::before, .haunt::after { display: none; }
   html.dim .dark { animation: none; }
