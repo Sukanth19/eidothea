@@ -3,7 +3,10 @@
 Only accounts with a confirmed email are recorded: how far down a story they got,
 roughly how long they spent, and whether they finished it."""
 
-from fastapi import APIRouter, HTTPException, Response
+import threading
+import time
+
+from fastapi import APIRouter, HTTPException, Request, Response
 from pydantic import BaseModel, Field
 
 from . import guard
@@ -73,6 +76,41 @@ def record_read(story_id: int, body: ReadIn, conn: Conn, user: OptionalUser):
     )
     conn.commit()
     return Response(status_code=204)
+
+
+# --------------------------------------------------------------------------- reading right now
+
+# Open tabs per story and when each last checked in. In memory, like guard's limits: the API runs
+# as one process, and a restart only means a minute of undercounting.
+PRESENT_FOR = 50  # seconds without a check-in before a tab stops counting
+MAX_TABS = 2000
+_present: dict[int, dict[str, float]] = {}
+_present_lock = threading.Lock()
+
+
+class HereIn(BaseModel):
+    tab: str = Field(min_length=8, max_length=40, pattern=r"^[A-Za-z0-9-]+$")
+    leaving: bool = False
+
+
+@router.post("/api/stories/{story_id}/here")
+def here(story_id: int, body: HereIn, request: Request):
+    """Anyone with the story open checks in every 20 seconds; answers how many others have it open."""
+    guard.limit(f"here:{guard.client_ip(request)}", 120, 60)
+    now = time.monotonic()
+    with _present_lock:
+        tabs = _present.setdefault(story_id, {})
+        for t, seen in list(tabs.items()):
+            if now - seen > PRESENT_FOR:
+                del tabs[t]
+        if body.leaving:
+            tabs.pop(body.tab, None)
+        elif body.tab in tabs or len(tabs) < MAX_TABS:
+            tabs[body.tab] = now
+        others = len(tabs) - (body.tab in tabs)
+        if not tabs:
+            del _present[story_id]
+    return {"others": others}
 
 
 # --------------------------------------------------------------------------- writer stats

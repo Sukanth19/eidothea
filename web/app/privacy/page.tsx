@@ -12,6 +12,10 @@ export default function PrivacyPage() {
       <ul>
         <li>We count visits: the page, the kind of device (phone, tablet or computer), and where the visit came from (another site, or a tag on a shared link like <code>?ref=instagram</code>).</li>
         <li>To tell visitors apart within a day, we keep a scrambled code made from your connection and browser, mixed with a secret that is <b>thrown away every day</b>. We never store your IP address, and we can&apos;t follow you from one day to the next.</li>
+        <li>
+          While a story is open, your browser checks in every 20 seconds with a random code for that tab, so readers can
+          see how many others have it open. It&apos;s kept in memory for under a minute and never written down.
+        </li>
         <li>No advertising, no third-party trackers, no tracking cookies.</li>
         <li>Visit records are deleted after about a year.</li>
       </ul>

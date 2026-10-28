@@ -314,6 +314,10 @@ a.chip.on:hover { color: var(--bg); }
 .doc-head { border-bottom: 1px dashed var(--line); padding-bottom: 1.2rem; margin-bottom: 2rem; }
 .doc-head .meta { display: flex; flex-wrap: wrap; gap: .4rem 1.4rem; color: var(--muted); font-size: .96rem; margin: .8rem 0 1rem; }
 .doc-head .meta b { color: var(--text); font-weight: 400; }
+/* Others reading the story right now; once a visit it miscounts by one */
+.reading-now { display: inline-flex; align-items: center; gap: .45rem; transition: color .2s; }
+.reading-now i { width: 7px; height: 7px; border-radius: 50%; background: var(--blood); box-shadow: 0 0 6px var(--blood); animation: blink 2.4s steps(1) infinite; }
+.reading-now.miscount { color: var(--red); text-shadow: 0 0 10px rgba(224, 57, 43, .5); }
 
 .reader-tools { display: flex; align-items: center; gap: .5rem; font-family: var(--caps); font-size: .9rem; color: var(--muted); margin-bottom: 1.5rem; }
 .reader-tools button { padding: 0 .55rem; font-size: .86rem; }

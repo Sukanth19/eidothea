@@ -7,6 +7,7 @@ import { RateStory } from "@/components/RateStory";
 import { ReportButton } from "@/components/Reports";
 import { ShareStory } from "@/components/ShareStory";
 import { Reader } from "@/components/Reader";
+import { ReadingNow } from "@/components/ReadingNow";
 import { ScrambleText } from "@/components/ScrambleText";
 import { Rating, StoryGrid } from "@/components/StoryCard";
 import { Sigil } from "@/components/Sigil";
@@ -98,6 +99,7 @@ export default async function StoryPage({ params, searchParams }: Props) {
             <span><Rating value={story.rating} /> · {story.rating_count} {story.rating_count === 1 ? "RATING" : "RATINGS"}</span>
           )}
           {story.updated_at && <span>EDITED {formatDate(story.updated_at)}</span>}
+          {!draft && <ReadingNow storyId={story.id} />}
         </div>
         {social && story.author && (
           <div className="byline">
