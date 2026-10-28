@@ -10,6 +10,8 @@
  * comment box and the editor all go through this file.
  */
 
+import { stillText } from "./commands";
+
 export type Mark = "s" | "u" | "b" | "i";
 export interface Run {
   text: string;
@@ -259,6 +261,7 @@ export function plainText(body: string): string {
     .join(" ");
 }
 
+// Story commands become their still stand-ins: an excerpt can't know who'll read it
 function runsText(runs: Run[]): string {
-  return runs.map(r => r.text).join("");
+  return stillText(runs.map(r => r.text).join(""));
 }

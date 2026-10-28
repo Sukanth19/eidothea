@@ -16,6 +16,11 @@ export default function PrivacyPage() {
           While a story is open, your browser checks in every 20 seconds with a random code for that tab, so readers can
           see how many others have it open. It&apos;s kept in memory for under a minute and never written down.
         </li>
+        <li>
+          Some community stories fill in your local time, weekday or the city your clock is set to. Your own browser does
+          that; none of it is sent to us. Your browser also remembers which stories you&apos;ve finished, so a story can
+          change on a second read.
+        </li>
         <li>No advertising, no third-party trackers, no tracking cookies.</li>
         <li>Visit records are deleted after about a year.</li>
       </ul>

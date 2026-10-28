@@ -132,6 +132,11 @@ export default async function StoryPage({ params, searchParams }: Props) {
       <WarningGate warnings={ownStory ? [] : story.warnings}>
         <Reader
           body={story.body}
+          storyId={story.id}
+          // Commands are for the community's stories; the classic archive is left as it was found
+          live={story.source === "user"}
+          reader={user?.username}
+          finished={!!story.my_read?.finished}
           track={!draft && user?.email_verified ? story.id : undefined}
           resume={story.my_read && !story.my_read.finished && story.my_read.progress >= 0.15 ? story.my_read.progress : undefined}
         />

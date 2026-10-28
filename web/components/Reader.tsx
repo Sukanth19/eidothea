@@ -3,19 +3,32 @@
 import { motion, useScroll, useSpring } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { ReaderContext } from "./LiveText";
 import { Markup } from "./Markup";
 
 const SIZE_KEY = "eidothea.reader-size";
 const SIZES = [0.92, 1.02, 1.14, 1.28];
+const FINISHED_KEY = "eidothea.finished";
 
 /** Story body: scroll-progress bar, adjustable text size, blocks that surface as you reach them.
- *  With `track` (a story id), reports how far the reader got and for how long. */
-export function Reader({ body, track, resume }: { body: string; track?: number; resume?: number }) {
+ *  With `track` (a story id), reports how far the reader got and for how long.
+ *  With `live`, plays out the story's {{commands}} for `reader` (see lib/commands.ts). */
+export function Reader({ body, storyId, track, resume, live, reader, finished = false }: {
+  body: string;
+  storyId: number;
+  track?: number;
+  resume?: number;
+  live?: boolean;
+  reader?: string;
+  /** Finished it before, by the account's reading record */
+  finished?: boolean;
+}) {
   const { scrollYProgress } = useScroll();
   const scaleX = useSpring(scrollYProgress, { stiffness: 120, damping: 30, restDelta: 0.001 });
   const [size, setSize] = useState(1);
   const [resumeAt, setResumeAt] = useState(resume);
   const [dock, setDock] = useState<HTMLElement | null>(null);
+  const [reread, setReread] = useState(finished);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   // On phones the controls also ride in the bottom bar, under the thumb (see Nav)
@@ -79,6 +92,30 @@ export function Reader({ body, track, resume }: { body: string; track?: number; 
     };
   }, [track]);
 
+  // {{reread}} needs to know about earlier visits, logged in or not. Finishing now only
+  // changes what the next visit shows, never the page being read.
+  useEffect(() => {
+    const el = bodyRef.current;
+    if (!live || !el) return;
+    let done: number[] = [];
+    try {
+      done = JSON.parse(localStorage.getItem(FINISHED_KEY) ?? "[]");
+    } catch {}
+    if (done.includes(storyId)) {
+      setReread(true);
+      return;
+    }
+    const onScroll = () => {
+      if (el.getBoundingClientRect().bottom > window.innerHeight) return;
+      window.removeEventListener("scroll", onScroll);
+      try {
+        localStorage.setItem(FINISHED_KEY, JSON.stringify([...done, storyId].slice(-500)));
+      } catch {}
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [live, storyId]);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(SIZE_KEY);
@@ -121,7 +158,9 @@ export function Reader({ body, track, resume }: { body: string; track?: number; 
       <div className="reader-tools">{tools}</div>
       {dock && createPortal(<div className="reader-dock">{tools}</div>, dock)}
       <div ref={bodyRef} className="story-body" style={{ "--reader-size": `${SIZES[size]}rem` } as React.CSSProperties}>
-        <Markup text={body} />
+        <ReaderContext.Provider value={{ name: reader, reread }}>
+          <Markup text={body} live={live} />
+        </ReaderContext.Provider>
       </div>
     </>
   );

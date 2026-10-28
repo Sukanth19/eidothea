@@ -551,6 +551,11 @@ body:has(.writer) main.view { padding-block: 0; }
 .writer-bottom { position: fixed; left: 0; right: 0; bottom: 0; z-index: 60; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: .55rem max(16px, env(safe-area-inset-right)) max(.55rem, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left)); background: var(--bg); border-top: 1px solid var(--line); font-family: var(--caps); font-size: .86rem; color: var(--muted); }
 .writer-bottom button { font-size: .9rem; padding: .1rem .8rem; }
 
+/* Story commands, played out for the reader */
+.cmd-vanish { transition: opacity 3s ease-in, filter 3s ease-in; }
+.cmd-vanish.gone { opacity: 0; filter: blur(2px); }
+.cmd-reread, .cmd-night { color: #efe5d3; }
+
 .scrim { position: fixed; inset: 0; z-index: 80; background: rgba(0, 0, 0, .6); }
 .drawer { position: fixed; top: 0; right: 0; bottom: 0; z-index: 90; width: min(440px, 100vw); overflow-y: auto; overscroll-behavior: contain; background: var(--panel); border-left: 1px solid var(--line); padding: max(1.2rem, env(safe-area-inset-top)) max(1.4rem, env(safe-area-inset-right)) 2rem 1.4rem; display: flex; flex-direction: column; }
 .drawer-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; margin-bottom: 1.2rem; }
